@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Databricks Deployment &amp; Configuration Guide</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="databricks-deployment--configuration-guide">Databricks Deployment &amp; Configuration Guide</h1>
+<h2 id="cookidoo-agent-assistant">Cookidoo Agent Assistant</h2>
+<p><strong>Version:</strong> 1.0<br>
+<strong>Last Updated:</strong> November 28, 2025</p>
+<hr>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#architecture-overview">Architecture Overview</a></li>
+<li><a href="#catalog--schema-setup">Catalog &amp; Schema Setup</a></li>
+<li><a href="#delta-live-tables-dlt-configuration">Delta Live Tables (DLT) Configuration</a></li>
+<li><a href="#vector-search-setup">Vector Search Setup</a></li>
+<li><a href="#model-serving-endpoints">Model Serving Endpoints</a></li>
+<li><a href="#agentbricks-configuration">AgentBricks Configuration</a></li>
+<li><a href="#mcp-server-integration">MCP Server Integration</a></li>
+<li><a href="#genie-space-setup">Genie Space Setup</a></li>
+<li><a href="#notebooks-deployment">Notebooks Deployment</a></li>
+<li><a href="#monitoring--logging">Monitoring &amp; Logging</a></li>
+<li><a href="#security--access-control">Security &amp; Access Control</a></li>
+<li><a href="#deployment-checklist">Deployment Checklist</a></li>
+</ol>
+<hr>
+<h2 id="overview">Overview</h2>
+<p>This guide provides comprehensive step-by-step instructions for deploying the Cookidoo Agent Assistant infrastructure on Databricks. The deployment includes data storage, LLM model serving, vector search capabilities, and analytics notebooks.</p>
+<h3 id="deployment-goals">Deployment Goals</h3>
+<ul>
+<li>Establish Unity Catalog structure for organized data management</li>
+<li>Create Delta Live Tables pipelines for real-time data processing</li>
+<li>Configure vector search for recipe similarity and recommendations</li>
+<li>Deploy Claude Sonnet 4.5 model endpoint for LLM interactions</li>
+<li>Set up AgentBricks for LLM orchestration workflows</li>
+<li>Integrate MCP server for Cookidoo API interactions</li>
+<li>Create Genie Space for natural language analytics</li>
+<li>Deploy analytical notebooks for insights and monitoring</li>
+</ul>
+<hr>
+<h2 id="prerequisites">Prerequisites</h2>
+<h3 id="required-access--permissions">Required Access &amp; Permissions</h3>
+<ul>
+<li>Databricks workspace with Admin or Power User access</li>
+<li>Unity Catalog enabled workspace</li>
+<li>Model Serving capability enabled</li>
+<li>Vector Search feature enabled (contact Databricks rep if not available)</li>
+<li>Azure subscription with appropriate permissions</li>
+<li>Databricks CLI installed and configured</li>
+</ul>
+<h3 id="required-software">Required Software</h3>
+<pre><code class="language-powershell"><span class="hljs-comment"># Install Databricks CLI</span>
+pip install databricks<span class="hljs-literal">-cli</span>
+
+<span class="hljs-comment"># Configure CLI</span>
+databricks configure <span class="hljs-literal">--token</span>
+<span class="hljs-comment"># Enter workspace URL: https://your-workspace.cloud.databricks.com</span>
+<span class="hljs-comment"># Enter token: &lt;your-personal-access-token&gt;</span>
+
+<span class="hljs-comment"># Verify connection</span>
+databricks workspace <span class="hljs-built_in">ls</span> /
+</code></pre>
+<h3 id="environment-variables">Environment Variables</h3>
+<p>Create a <code>.databricks.env</code> file:</p>
+<pre><code class="language-env">DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
+DATABRICKS_TOKEN=&lt;your-token&gt;
+DATABRICKS_CATALOG=cookidoo_agent
+DATABRICKS_SCHEMA=main
+WORKSPACE_ID=&lt;your-workspace-id&gt;
+</code></pre>
+<hr>
+<h2 id="architecture-overview">Architecture Overview</h2>
+<h3 id="data-flow-architecture">Data Flow Architecture</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                    Databricks Workspace                      │
+│                                                               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │         Unity Catalog: cookidoo_agent                   │  │
+│  │                                                        │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │  │
+│  │  │   Schema:    │  │   Schema:    │  │  Schema:   │ │  │
+│  │  │     main     │  │   staging    │  │  analytics │ │  │
+│  │  └──────────────┘  └──────────────┘  └────────────┘ │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │         Delta Live Tables (DLT) Pipelines             │  │
+│  │                                                        │  │
+│  │  recipes_bronze → recipes_silver → recipes_gold      │  │
+│  │  interactions_bronze → interactions_silver → gold    │  │
+│  │  shopping_lists_pipeline                              │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              Vector Search Index                       │  │
+│  │                                                        │  │
+│  │  recipe_embeddings (for similarity search)            │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │           Model Serving Endpoints                      │  │
+│  │                                                        │  │
+│  │  cookidoo-agent-primary (Claude Sonnet 4.5)            │  │
+│  │  cookidoo-agent-analytics (Claude Opus 4.1)            │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              AgentBricks Orchestration                 │  │
+│  │                                                        │  │
+│  │  Recipe Modification Agent                             │  │
+│  │  Q&amp;A Agent                                             │  │
+│  │  Shopping List Agent                                   │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                  Genie Space                           │  │
+│  │                                                        │  │
+│  │  Natural language analytics interface                 │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌──────────────────┐
+                    │   MCP Server     │
+                    │ (Cookidoo API)   │
+                    └──────────────────┘
+</code></pre>
+<h3 id="component-interactions">Component Interactions</h3>
+<ol>
+<li><strong>External Data Ingestion</strong>: MCP server fetches recipe data from Cookidoo</li>
+<li><strong>Bronze Layer</strong>: Raw data lands in staging tables</li>
+<li><strong>Silver Layer</strong>: DLT applies cleaning, validation, deduplication</li>
+<li><strong>Gold Layer</strong>: Aggregated, analytics-ready tables</li>
+<li><strong>Vector Search</strong>: Recipe embeddings enable semantic search</li>
+<li><strong>Model Serving</strong>: LLM endpoints process user requests</li>
+<li><strong>AgentBricks</strong>: Orchestrates complex multi-step workflows</li>
+<li><strong>Genie Space</strong>: Provides analytics to stakeholders</li>
+</ol>
+<hr>
+<h2 id="catalog--schema-setup">Catalog &amp; Schema Setup</h2>
+<h3 id="step-1-create-unity-catalog">Step 1: Create Unity Catalog</h3>
+<p>Execute in Databricks SQL or notebook:</p>
+<pre><code class="language-sql"><span class="hljs-comment">-- Create the main catalog for the Cookidoo Agent project</span>
+<span class="hljs-keyword">CREATE</span> CATALOG IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> cookidoo_agent
+COMMENT <span class="hljs-string">&#x27;Main catalog for Cookidoo Agent Assistant data and models&#x27;</span>;
+
+<span class="hljs-comment">-- Grant necessary permissions</span>
+<span class="hljs-keyword">GRANT</span> USE CATALOG <span class="hljs-keyword">ON</span> CATALOG cookidoo_agent <span class="hljs-keyword">TO</span> `account users`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">CREATE</span> SCHEMA <span class="hljs-keyword">ON</span> CATALOG cookidoo_agent <span class="hljs-keyword">TO</span> `data_engineers`;
+</code></pre>
+<h3 id="step-2-create-schemas">Step 2: Create Schemas</h3>
+<pre><code class="language-sql">USE CATALOG cookidoo_agent;
+
+<span class="hljs-comment">-- Main schema for production data</span>
+<span class="hljs-keyword">CREATE</span> SCHEMA IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> main
+COMMENT <span class="hljs-string">&#x27;Production schema for recipe data, user interactions, and operational tables&#x27;</span>;
+
+<span class="hljs-comment">-- Staging schema for data ingestion</span>
+<span class="hljs-keyword">CREATE</span> SCHEMA IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> staging
+COMMENT <span class="hljs-string">&#x27;Staging schema for raw data ingestion from Cookidoo API&#x27;</span>;
+
+<span class="hljs-comment">-- Analytics schema for aggregated views and dashboards</span>
+<span class="hljs-keyword">CREATE</span> SCHEMA IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> analytics
+COMMENT <span class="hljs-string">&#x27;Analytics schema for aggregated metrics and reporting views&#x27;</span>;
+
+<span class="hljs-comment">-- ML schema for model artifacts and feature tables</span>
+<span class="hljs-keyword">CREATE</span> SCHEMA IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> ml
+COMMENT <span class="hljs-string">&#x27;ML schema for model artifacts, feature stores, and training data&#x27;</span>;
+
+<span class="hljs-comment">-- Grant permissions</span>
+<span class="hljs-keyword">GRANT</span> USE SCHEMA <span class="hljs-keyword">ON</span> SCHEMA main <span class="hljs-keyword">TO</span> `account users`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">ON</span> SCHEMA main <span class="hljs-keyword">TO</span> `account users`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">ALL</span> PRIVILEGES <span class="hljs-keyword">ON</span> SCHEMA staging <span class="hljs-keyword">TO</span> `data_engineers`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">ALL</span> PRIVILEGES <span class="hljs-keyword">ON</span> SCHEMA ml <span class="hljs-keyword">TO</span> `ml_engineers`;
+</code></pre>
+<h3 id="step-3-create-core-tables">Step 3: Create Core Tables</h3>
+<pre><code class="language-sql">USE CATALOG cookidoo_agent;
+USE SCHEMA main;
+
+<span class="hljs-comment">-- Recipes table</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> recipes (
+    recipe_id STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    title STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    description STRING,
+    servings <span class="hljs-type">INT</span>,
+    prep_time_minutes <span class="hljs-type">INT</span>,
+    cook_time_minutes <span class="hljs-type">INT</span>,
+    total_time_minutes <span class="hljs-type">INT</span>,
+    difficulty STRING,
+    ingredients <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRUCT<span class="hljs-operator">&lt;</span>
+        name: STRING,
+        quantity: <span class="hljs-keyword">DOUBLE</span>,
+        unit: STRING,
+        notes: STRING
+    <span class="hljs-operator">&gt;&gt;</span>,
+    steps <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRUCT<span class="hljs-operator">&lt;</span>
+        step_number: <span class="hljs-type">INT</span>,
+        instruction: STRING,
+        duration_minutes: <span class="hljs-type">INT</span>,
+        temperature: <span class="hljs-type">INT</span>
+    <span class="hljs-operator">&gt;&gt;</span>,
+    tags <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRING<span class="hljs-operator">&gt;</span>,
+    dietary_info <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRING<span class="hljs-operator">&gt;</span>,
+    nutritional_info STRUCT<span class="hljs-operator">&lt;</span>
+        calories: <span class="hljs-type">INT</span>,
+        protein_g: <span class="hljs-keyword">DOUBLE</span>,
+        carbohydrates_g: <span class="hljs-keyword">DOUBLE</span>,
+        fat_g: <span class="hljs-keyword">DOUBLE</span>,
+        fiber_g: <span class="hljs-keyword">DOUBLE</span>,
+        sodium_mg: <span class="hljs-type">INT</span>
+    <span class="hljs-operator">&gt;</span>,
+    source STRING,
+    source_url STRING,
+    image_url STRING,
+    created_at <span class="hljs-type">TIMESTAMP</span>,
+    updated_at <span class="hljs-type">TIMESTAMP</span>,
+    <span class="hljs-keyword">PRIMARY</span> KEY (recipe_id)
+)
+<span class="hljs-keyword">USING</span> DELTA
+TBLPROPERTIES (
+    <span class="hljs-string">&#x27;delta.enableChangeDataFeed&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;true&#x27;</span>,
+    <span class="hljs-string">&#x27;delta.autoOptimize.optimizeWrite&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;true&#x27;</span>,
+    <span class="hljs-string">&#x27;delta.autoOptimize.autoCompact&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;true&#x27;</span>
+)
+COMMENT <span class="hljs-string">&#x27;Core recipes table with full recipe information&#x27;</span>;
+
+<span class="hljs-comment">-- User interactions table</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> user_interactions (
+    interaction_id STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    user_id STRING,
+    session_id STRING,
+    interaction_type STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,  <span class="hljs-comment">-- &#x27;recipe_view&#x27;, &#x27;recipe_modify&#x27;, &#x27;chat&#x27;, &#x27;shopping_list&#x27;</span>
+    recipe_id STRING,
+    interaction_data MAP<span class="hljs-operator">&lt;</span>STRING, STRING<span class="hljs-operator">&gt;</span>,
+    <span class="hljs-type">timestamp</span> <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    <span class="hljs-keyword">PRIMARY</span> KEY (interaction_id)
+)
+<span class="hljs-keyword">USING</span> DELTA
+PARTITIONED <span class="hljs-keyword">BY</span> (<span class="hljs-type">DATE</span>(<span class="hljs-type">timestamp</span>))
+TBLPROPERTIES (
+    <span class="hljs-string">&#x27;delta.enableChangeDataFeed&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;true&#x27;</span>,
+    <span class="hljs-string">&#x27;delta.autoOptimize.optimizeWrite&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;true&#x27;</span>
+)
+COMMENT <span class="hljs-string">&#x27;User interaction events for analytics and model improvement&#x27;</span>;
+
+<span class="hljs-comment">-- Recipe modifications table</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> recipe_modifications (
+    modification_id STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    original_recipe_id STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    modified_recipe_id STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    user_id STRING,
+    modification_prompt STRING,
+    modifications_applied <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRING<span class="hljs-operator">&gt;</span>,
+    modification_notes STRING,
+    created_at <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    <span class="hljs-keyword">PRIMARY</span> KEY (modification_id),
+    <span class="hljs-keyword">FOREIGN</span> KEY (original_recipe_id) <span class="hljs-keyword">REFERENCES</span> recipes(recipe_id)
+)
+<span class="hljs-keyword">USING</span> DELTA
+PARTITIONED <span class="hljs-keyword">BY</span> (<span class="hljs-type">DATE</span>(created_at))
+COMMENT <span class="hljs-string">&#x27;Tracking of recipe modifications for analysis and improvement&#x27;</span>;
+
+<span class="hljs-comment">-- Shopping lists table</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> shopping_lists (
+    list_id STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    user_id STRING,
+    list_name STRING,
+    recipe_ids <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRING<span class="hljs-operator">&gt;</span>,
+    items <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRUCT<span class="hljs-operator">&lt;</span>
+        ingredient_name: STRING,
+        quantity: <span class="hljs-keyword">DOUBLE</span>,
+        unit: STRING,
+        category: STRING,
+        checked: <span class="hljs-type">BOOLEAN</span>,
+        source_recipes: <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRING<span class="hljs-operator">&gt;</span>
+    <span class="hljs-operator">&gt;&gt;</span>,
+    created_at <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    updated_at <span class="hljs-type">TIMESTAMP</span>,
+    <span class="hljs-keyword">PRIMARY</span> KEY (list_id)
+)
+<span class="hljs-keyword">USING</span> DELTA
+COMMENT <span class="hljs-string">&#x27;User-generated shopping lists&#x27;</span>;
+
+<span class="hljs-comment">-- Chat conversations table</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> chat_conversations (
+    conversation_id STRING <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    user_id STRING,
+    messages <span class="hljs-keyword">ARRAY</span><span class="hljs-operator">&lt;</span>STRUCT<span class="hljs-operator">&lt;</span>
+        role: STRING,
+        content: STRING,
+        <span class="hljs-type">timestamp</span>: <span class="hljs-type">TIMESTAMP</span>
+    <span class="hljs-operator">&gt;&gt;</span>,
+    recipe_context STRING,
+    created_at <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,
+    updated_at <span class="hljs-type">TIMESTAMP</span>,
+    <span class="hljs-keyword">PRIMARY</span> KEY (conversation_id)
+)
+<span class="hljs-keyword">USING</span> DELTA
+PARTITIONED <span class="hljs-keyword">BY</span> (<span class="hljs-type">DATE</span>(created_at))
+COMMENT <span class="hljs-string">&#x27;Chat conversation history for context and analysis&#x27;</span>;
+</code></pre>
+<h3 id="step-4-create-indexes">Step 4: Create Indexes</h3>
+<pre><code class="language-sql"><span class="hljs-comment">-- Create indexes for better query performance</span>
+<span class="hljs-keyword">CREATE</span> INDEX IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> idx_recipes_tags <span class="hljs-keyword">ON</span> recipes(tags);
+<span class="hljs-keyword">CREATE</span> INDEX IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> idx_recipes_dietary <span class="hljs-keyword">ON</span> recipes(dietary_info);
+<span class="hljs-keyword">CREATE</span> INDEX IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> idx_interactions_user <span class="hljs-keyword">ON</span> user_interactions(user_id);
+<span class="hljs-keyword">CREATE</span> INDEX IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> idx_interactions_recipe <span class="hljs-keyword">ON</span> user_interactions(recipe_id);
+</code></pre>
+<hr>
+<h2 id="delta-live-tables-dlt-configuration">Delta Live Tables (DLT) Configuration</h2>
+<h3 id="overview-1">Overview</h3>
+<p>Delta Live Tables provide declarative ETL pipelines that automatically manage data quality, lineage, and refreshes. We'll create three main DLT pipelines:</p>
+<ol>
+<li><strong>recipes_pipeline</strong>: Ingest and process recipe data</li>
+<li><strong>interactions_pipeline</strong>: Process user interaction events</li>
+<li><strong>shopping_lists_pipeline</strong>: Aggregate shopping list data</li>
+</ol>
+<h3 id="step-1-create-dlt-pipeline-configuration">Step 1: Create DLT Pipeline Configuration</h3>
+<p>Save as <code>databricks/dlt/recipes_pipeline.json</code>:</p>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;cookidoo_recipes_pipeline&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;storage&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/mnt/cookidoo_agent/pipelines/recipes&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;cookidoo_agent.main&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;continuous&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">false</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;channel&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CURRENT&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;edition&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ADVANCED&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;photon&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">true</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;libraries&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;notebook&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/Workspace/cookidoo-agent/databricks/notebooks/dlt_recipes_bronze_silver_gold&quot;</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;clusters&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;label&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;default&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;autoscale&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;min_workers&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;max_workers&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;mode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ENHANCED&quot;</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;configuration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;source_path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/mnt/cookidoo_agent/raw/recipes&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;checkpoint_location&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/mnt/cookidoo_agent/checkpoints/recipes&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;notifications&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;alerts&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;on-update-failure&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;on-update-fatal-failure&quot;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;email_recipients&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;data-team@company.com&quot;</span><span class="hljs-punctuation">]</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 id="step-2-create-dlt-notebook-bronze--silver--gold">Step 2: Create DLT Notebook (Bronze → Silver → Gold)</h3>
+<p>Save as notebook at <code>databricks/notebooks/dlt_recipes_bronze_silver_gold.ipynb</code>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># Databricks notebook source</span>
+<span class="hljs-keyword">import</span> dlt
+<span class="hljs-keyword">from</span> pydantic <span class="hljs-keyword">import</span> ValidationError
+<span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># MAGIC %md</span>
+<span class="hljs-comment"># MAGIC # Recipes DLT Pipeline: Bronze → Silver → Gold</span>
+<span class="hljs-comment"># MAGIC</span>
+<span class="hljs-comment"># MAGIC This notebook defines the Delta Live Tables pipeline for recipe data processing.</span>
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># Bronze Layer: Raw data ingestion</span>
+
+<span class="hljs-meta">@dlt.table(<span class="hljs-params">
+    name=<span class="hljs-string">&quot;recipes_bronze&quot;</span>,
+    comment=<span class="hljs-string">&quot;Raw recipe data from Cookidoo API via MCP server&quot;</span>,
+    table_properties={
+        <span class="hljs-string">&quot;quality&quot;</span>: <span class="hljs-string">&quot;bronze&quot;</span>,
+        <span class="hljs-string">&quot;pipelines.autoOptimize.zOrderCols&quot;</span>: <span class="hljs-string">&quot;ingestion_timestamp&quot;</span>
+    }
+</span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">recipes_bronze</span>():
+    <span class="hljs-string">&quot;&quot;&quot;
+    Ingest raw recipe data from cloud storage (populated by MCP server).
+    No transformations, just load and timestamp.
+    &quot;&quot;&quot;</span>
+    <span class="hljs-keyword">return</span> (
+        spark.readStream
+        .<span class="hljs-built_in">format</span>(<span class="hljs-string">&quot;cloudFiles&quot;</span>)
+        .option(<span class="hljs-string">&quot;cloudFiles.format&quot;</span>, <span class="hljs-string">&quot;json&quot;</span>)
+        .option(<span class="hljs-string">&quot;cloudFiles.schemaLocation&quot;</span>, <span class="hljs-string">&quot;/mnt/cookidoo_agent/schemas/recipes&quot;</span>)
+        .load(<span class="hljs-string">&quot;/mnt/cookidoo_agent/raw/recipes&quot;</span>)
+        .withColumn(<span class="hljs-string">&quot;ingestion_timestamp&quot;</span>, current_timestamp())
+        .withColumn(<span class="hljs-string">&quot;source_file&quot;</span>, input_file_name())
+    )
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># Silver Layer: Cleaned and validated data</span>
+
+<span class="hljs-meta">@dlt.table(<span class="hljs-params">
+    name=<span class="hljs-string">&quot;recipes_silver&quot;</span>,
+    comment=<span class="hljs-string">&quot;Cleaned and validated recipe data&quot;</span>,
+    table_properties={
+        <span class="hljs-string">&quot;quality&quot;</span>: <span class="hljs-string">&quot;silver&quot;</span>,
+        <span class="hljs-string">&quot;delta.enableChangeDataFeed&quot;</span>: <span class="hljs-string">&quot;true&quot;</span>
+    }
+</span>)</span>
+<span class="hljs-meta">@dlt.expect_all_or_drop(<span class="hljs-params">{
+    <span class="hljs-string">&quot;valid_recipe_id&quot;</span>: <span class="hljs-string">&quot;recipe_id IS NOT NULL AND recipe_id != &#x27;&#x27;&quot;</span>,
+    <span class="hljs-string">&quot;valid_title&quot;</span>: <span class="hljs-string">&quot;title IS NOT NULL AND LENGTH(title) &gt; 0&quot;</span>,
+    <span class="hljs-string">&quot;valid_servings&quot;</span>: <span class="hljs-string">&quot;servings IS NULL OR servings &gt;= 1&quot;</span>,
+    <span class="hljs-string">&quot;valid_times&quot;</span>: <span class="hljs-string">&quot;prep_time_minutes IS NULL OR prep_time_minutes &gt;= 0&quot;</span>
+}</span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">recipes_silver</span>():
+    <span class="hljs-string">&quot;&quot;&quot;
+    Apply data quality rules and transformations.
+    - Remove duplicates
+    - Validate required fields
+    - Standardize formats
+    - Enrich with calculated fields
+    &quot;&quot;&quot;</span>
+    <span class="hljs-keyword">from</span> pyspark.sql <span class="hljs-keyword">import</span> functions <span class="hljs-keyword">as</span> F
+    
+    df = dlt.read_stream(<span class="hljs-string">&quot;recipes_bronze&quot;</span>)
+    
+    <span class="hljs-keyword">return</span> (
+        df
+        <span class="hljs-comment"># Remove duplicates based on recipe_id, keeping latest</span>
+        .withWatermark(<span class="hljs-string">&quot;ingestion_timestamp&quot;</span>, <span class="hljs-string">&quot;1 hour&quot;</span>)
+        .dropDuplicates([<span class="hljs-string">&quot;recipe_id&quot;</span>])
+        
+        <span class="hljs-comment"># Calculate total time if missing</span>
+        .withColumn(
+            <span class="hljs-string">&quot;total_time_minutes&quot;</span>,
+            F.when(
+                F.col(<span class="hljs-string">&quot;total_time_minutes&quot;</span>).isNull(),
+                F.coalesce(F.col(<span class="hljs-string">&quot;prep_time_minutes&quot;</span>), F.lit(<span class="hljs-number">0</span>)) + 
+                F.coalesce(F.col(<span class="hljs-string">&quot;cook_time_minutes&quot;</span>), F.lit(<span class="hljs-number">0</span>))
+            ).otherwise(F.col(<span class="hljs-string">&quot;total_time_minutes&quot;</span>))
+        )
+        
+        <span class="hljs-comment"># Standardize difficulty levels</span>
+        .withColumn(
+            <span class="hljs-string">&quot;difficulty&quot;</span>,
+            F.lower(F.trim(F.col(<span class="hljs-string">&quot;difficulty&quot;</span>)))
+        )
+        
+        <span class="hljs-comment"># Add processing metadata</span>
+        .withColumn(<span class="hljs-string">&quot;processed_at&quot;</span>, F.current_timestamp())
+        .withColumn(<span class="hljs-string">&quot;data_quality_score&quot;</span>, F.lit(<span class="hljs-number">1.0</span>))  <span class="hljs-comment"># Can be enhanced with scoring logic</span>
+    )
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># Gold Layer: Analytics-ready aggregated data</span>
+
+<span class="hljs-meta">@dlt.table(<span class="hljs-params">
+    name=<span class="hljs-string">&quot;recipes_gold&quot;</span>,
+    comment=<span class="hljs-string">&quot;Analytics-ready recipe data with enrichments&quot;</span>,
+    table_properties={
+        <span class="hljs-string">&quot;quality&quot;</span>: <span class="hljs-string">&quot;gold&quot;</span>
+    }
+</span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">recipes_gold</span>():
+    <span class="hljs-string">&quot;&quot;&quot;
+    Create aggregated, analytics-ready recipe data.
+    - Add derived features
+    - Create lookup-friendly structures
+    - Optimize for query performance
+    &quot;&quot;&quot;</span>
+    <span class="hljs-keyword">from</span> pyspark.sql <span class="hljs-keyword">import</span> functions <span class="hljs-keyword">as</span> F
+    
+    df = dlt.read(<span class="hljs-string">&quot;recipes_silver&quot;</span>)
+    
+    <span class="hljs-keyword">return</span> (
+        df
+        <span class="hljs-comment"># Add derived features</span>
+        .withColumn(<span class="hljs-string">&quot;is_quick_recipe&quot;</span>, F.col(<span class="hljs-string">&quot;total_time_minutes&quot;</span>) &lt;= <span class="hljs-number">30</span>)
+        .withColumn(<span class="hljs-string">&quot;is_vegetarian&quot;</span>, F.array_contains(F.col(<span class="hljs-string">&quot;dietary_info&quot;</span>), <span class="hljs-string">&quot;vegetarian&quot;</span>))
+        .withColumn(<span class="hljs-string">&quot;is_vegan&quot;</span>, F.array_contains(F.col(<span class="hljs-string">&quot;dietary_info&quot;</span>), <span class="hljs-string">&quot;vegan&quot;</span>))
+        .withColumn(<span class="hljs-string">&quot;is_gluten_free&quot;</span>, F.array_contains(F.col(<span class="hljs-string">&quot;dietary_info&quot;</span>), <span class="hljs-string">&quot;gluten_free&quot;</span>))
+        
+        <span class="hljs-comment"># Calculate ingredient count</span>
+        .withColumn(<span class="hljs-string">&quot;ingredient_count&quot;</span>, F.size(F.col(<span class="hljs-string">&quot;ingredients&quot;</span>)))
+        .withColumn(<span class="hljs-string">&quot;step_count&quot;</span>, F.size(F.col(<span class="hljs-string">&quot;steps&quot;</span>)))
+        
+        <span class="hljs-comment"># Create searchable text field</span>
+        .withColumn(
+            <span class="hljs-string">&quot;searchable_text&quot;</span>,
+            F.concat_ws(<span class="hljs-string">&quot; &quot;</span>,
+                F.col(<span class="hljs-string">&quot;title&quot;</span>),
+                F.col(<span class="hljs-string">&quot;description&quot;</span>),
+                F.array_join(F.col(<span class="hljs-string">&quot;tags&quot;</span>), <span class="hljs-string">&quot; &quot;</span>)
+            )
+        )
+    )
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># Materialized view: Recipe statistics</span>
+
+<span class="hljs-meta">@dlt.table(<span class="hljs-params">
+    name=<span class="hljs-string">&quot;recipe_statistics&quot;</span>,
+    comment=<span class="hljs-string">&quot;Aggregated statistics about recipes&quot;</span>
+</span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">recipe_statistics</span>():
+    <span class="hljs-string">&quot;&quot;&quot;
+    Create summary statistics for dashboards and monitoring.
+    &quot;&quot;&quot;</span>
+    <span class="hljs-keyword">from</span> pyspark.sql <span class="hljs-keyword">import</span> functions <span class="hljs-keyword">as</span> F
+    
+    <span class="hljs-keyword">return</span> (
+        dlt.read(<span class="hljs-string">&quot;recipes_gold&quot;</span>)
+        .groupBy()
+        .agg(
+            F.count(<span class="hljs-string">&quot;*&quot;</span>).alias(<span class="hljs-string">&quot;total_recipes&quot;</span>),
+            F.avg(<span class="hljs-string">&quot;total_time_minutes&quot;</span>).alias(<span class="hljs-string">&quot;avg_total_time&quot;</span>),
+            F.avg(<span class="hljs-string">&quot;servings&quot;</span>).alias(<span class="hljs-string">&quot;avg_servings&quot;</span>),
+            F.countDistinct(<span class="hljs-string">&quot;source&quot;</span>).alias(<span class="hljs-string">&quot;unique_sources&quot;</span>),
+            F.<span class="hljs-built_in">sum</span>(F.when(F.col(<span class="hljs-string">&quot;is_vegetarian&quot;</span>), <span class="hljs-number">1</span>).otherwise(<span class="hljs-number">0</span>)).alias(<span class="hljs-string">&quot;vegetarian_count&quot;</span>),
+            F.<span class="hljs-built_in">sum</span>(F.when(F.col(<span class="hljs-string">&quot;is_vegan&quot;</span>), <span class="hljs-number">1</span>).otherwise(<span class="hljs-number">0</span>)).alias(<span class="hljs-string">&quot;vegan_count&quot;</span>),
+            F.<span class="hljs-built_in">sum</span>(F.when(F.col(<span class="hljs-string">&quot;is_quick_recipe&quot;</span>), <span class="hljs-number">1</span>).otherwise(<span class="hljs-number">0</span>)).alias(<span class="hljs-string">&quot;quick_recipe_count&quot;</span>)
+        )
+    )
+</code></pre>
+<h3 id="step-3-deploy-dlt-pipeline">Step 3: Deploy DLT Pipeline</h3>
+<pre><code class="language-powershell"><span class="hljs-comment"># Using Databricks CLI</span>
+databricks pipelines create <span class="hljs-literal">--json</span> @databricks/dlt/recipes_pipeline.json
+
+<span class="hljs-comment"># Or using Python script</span>
+python databricks/scripts/deploy_dlt_pipeline.py
+</code></pre>
+<h3 id="step-4-start-dlt-pipeline">Step 4: Start DLT Pipeline</h3>
+<pre><code class="language-python"><span class="hljs-comment"># databricks/scripts/start_dlt_pipeline.py</span>
+<span class="hljs-keyword">from</span> databricks.sdk <span class="hljs-keyword">import</span> WorkspaceClient
+<span class="hljs-keyword">from</span> databricks.sdk.service <span class="hljs-keyword">import</span> pipelines
+
+w = WorkspaceClient()
+
+<span class="hljs-comment"># Find pipeline by name</span>
+pipeline_list = w.pipelines.list_pipelines()
+pipeline = <span class="hljs-built_in">next</span>((p <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> pipeline_list <span class="hljs-keyword">if</span> p.name == <span class="hljs-string">&quot;cookidoo_recipes_pipeline&quot;</span>), <span class="hljs-literal">None</span>)
+
+<span class="hljs-keyword">if</span> pipeline:
+    <span class="hljs-comment"># Start the pipeline</span>
+    update = w.pipelines.start_update(
+        pipeline_id=pipeline.pipeline_id,
+        full_refresh=<span class="hljs-literal">False</span>  <span class="hljs-comment"># Set to True for complete refresh</span>
+    )
+    
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Pipeline update started: <span class="hljs-subst">{update.update_id}</span>&quot;</span>)
+<span class="hljs-keyword">else</span>:
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Pipeline not found&quot;</span>)
+</code></pre>
+<hr>
+<h2 id="vector-search-setup">Vector Search Setup</h2>
+<p>Vector search enables semantic similarity searches for recipes, allowing users to find similar recipes based on ingredients, cooking methods, or flavor profiles.</p>
+<h3 id="step-1-create-vector-search-endpoint">Step 1: Create Vector Search Endpoint</h3>
+<pre><code class="language-python"><span class="hljs-comment"># databricks/scripts/setup_vector_search.py</span>
+<span class="hljs-keyword">from</span> databricks.sdk <span class="hljs-keyword">import</span> WorkspaceClient
+<span class="hljs-keyword">from</span> databricks.sdk.service.vectorsearch <span class="hljs-keyword">import</span> (
+    EndpointType,
+    VectorIndexType,
+    DeltaSyncVectorIndexSpecRequest,
+    EmbeddingSourceColumn
+)
+
+w = WorkspaceClient()
+
+<span class="hljs-comment"># Create vector search endpoint</span>
+endpoint = w.vector_search_endpoints.create_endpoint(
+    name=<span class="hljs-string">&quot;cookidoo-vector-search&quot;</span>,
+    endpoint_type=EndpointType.STANDARD
+)
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Vector search endpoint created: <span class="hljs-subst">{endpoint.name}</span>&quot;</span>)
+</code></pre>
+<h3 id="step-2-create-vector-index-for-recipes">Step 2: Create Vector Index for Recipes</h3>
+<pre><code class="language-python"><span class="hljs-comment"># Wait for endpoint to be ready</span>
+<span class="hljs-keyword">import</span> time
+<span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:
+    endpoint_info = w.vector_search_endpoints.get_endpoint(name=<span class="hljs-string">&quot;cookidoo-vector-search&quot;</span>)
+    <span class="hljs-keyword">if</span> endpoint_info.endpoint_status.state == <span class="hljs-string">&quot;ONLINE&quot;</span>:
+        <span class="hljs-keyword">break</span>
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Waiting for endpoint to come online...&quot;</span>)
+    time.sleep(<span class="hljs-number">30</span>)
+
+<span class="hljs-comment"># Create vector index</span>
+index = w.vector_search_indexes.create_index(
+    name=<span class="hljs-string">&quot;cookidoo_agent.main.recipe_embeddings_index&quot;</span>,
+    endpoint_name=<span class="hljs-string">&quot;cookidoo-vector-search&quot;</span>,
+    primary_key=<span class="hljs-string">&quot;recipe_id&quot;</span>,
+    index_type=VectorIndexType.DELTA_SYNC,
+    delta_sync_index_spec=DeltaSyncVectorIndexSpecRequest(
+        source_table=<span class="hljs-string">&quot;cookidoo_agent.main.recipes_gold&quot;</span>,
+        embedding_source_columns=[
+            EmbeddingSourceColumn(
+                name=<span class="hljs-string">&quot;searchable_text&quot;</span>,
+                embedding_model_endpoint_name=<span class="hljs-string">&quot;databricks-bge-large-en&quot;</span>  <span class="hljs-comment"># Use Databricks embedding model</span>
+            )
+        ],
+        pipeline_type=<span class="hljs-string">&quot;TRIGGERED&quot;</span>
+    )
+)
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Vector index created: <span class="hljs-subst">{index.name}</span>&quot;</span>)
+</code></pre>
+<h3 id="step-3-query-vector-index">Step 3: Query Vector Index</h3>
+<pre><code class="language-python"><span class="hljs-comment"># Example: Find similar recipes</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">find_similar_recipes</span>(<span class="hljs-params">query_text: <span class="hljs-built_in">str</span>, num_results: <span class="hljs-built_in">int</span> = <span class="hljs-number">10</span></span>):
+    <span class="hljs-string">&quot;&quot;&quot;Find recipes similar to the query text.&quot;&quot;&quot;</span>
+    
+    results = w.vector_search_indexes.query_index(
+        index_name=<span class="hljs-string">&quot;cookidoo_agent.main.recipe_embeddings_index&quot;</span>,
+        query_text=query_text,
+        columns=[<span class="hljs-string">&quot;recipe_id&quot;</span>, <span class="hljs-string">&quot;title&quot;</span>, <span class="hljs-string">&quot;description&quot;</span>, <span class="hljs-string">&quot;tags&quot;</span>],
+        num_results=num_results
+    )
+    
+    <span class="hljs-keyword">return</span> results.manifest.columns
+
+<span class="hljs-comment"># Usage</span>
+similar_recipes = find_similar_recipes(<span class="hljs-string">&quot;quick pasta dishes with vegetables&quot;</span>)
+</code></pre>
+<hr>
+<h2 id="model-serving-endpoints">Model Serving Endpoints</h2>
+<h3 id="step-1-create-claude-sonnet-45-endpoint-primary">Step 1: Create Claude Sonnet 4.5 Endpoint (Primary)</h3>
+<pre><code class="language-python"><span class="hljs-comment"># databricks/scripts/create_model_endpoint.py</span>
+<span class="hljs-keyword">from</span> databricks.sdk <span class="hljs-keyword">import</span> WorkspaceClient
+<span class="hljs-keyword">from</span> databricks.sdk.service.serving <span class="hljs-keyword">import</span> (
+    ServedEntityInput,
+    EndpointCoreConfigInput,
+    AutoCaptureConfigInput
+)
+
+w = WorkspaceClient()
+
+<span class="hljs-comment"># Create primary LLM endpoint (Claude Sonnet 4.5)</span>
+endpoint = w.serving_endpoints.create(
+    name=<span class="hljs-string">&quot;cookidoo-agent-primary&quot;</span>,
+    config=EndpointCoreConfigInput(
+        served_entities=[
+            ServedEntityInput(
+                entity_name=<span class="hljs-string">&quot;anthropic.claude-sonnet-4-5&quot;</span>,
+                entity_version=<span class="hljs-string">&quot;1&quot;</span>,
+                workload_size=<span class="hljs-string">&quot;Small&quot;</span>,
+                scale_to_zero_enabled=<span class="hljs-literal">True</span>,
+                environment_vars={
+                    <span class="hljs-string">&quot;TEMPERATURE&quot;</span>: <span class="hljs-string">&quot;0.7&quot;</span>,
+                    <span class="hljs-string">&quot;MAX_TOKENS&quot;</span>: <span class="hljs-string">&quot;2000&quot;</span>
+                }
+            )
+        ],
+        auto_capture_config=AutoCaptureConfigInput(
+            catalog_name=<span class="hljs-string">&quot;cookidoo_agent&quot;</span>,
+            schema_name=<span class="hljs-string">&quot;ml&quot;</span>,
+            table_name_prefix=<span class="hljs-string">&quot;llm_inference_logs&quot;</span>
+        )
+    )
+)
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Model endpoint created: <span class="hljs-subst">{endpoint.name}</span>&quot;</span>)
+</code></pre>
+<h3 id="step-2-test-model-endpoint">Step 2: Test Model Endpoint</h3>
+<pre><code class="language-python"><span class="hljs-comment"># Test the endpoint</span>
+<span class="hljs-keyword">import</span> requests
+<span class="hljs-keyword">import</span> os
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">query_llm_endpoint</span>(<span class="hljs-params">prompt: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">str</span>:
+    <span class="hljs-string">&quot;&quot;&quot;Query the Claude Sonnet 4.5 endpoint.&quot;&quot;&quot;</span>
+    
+    workspace_url = os.getenv(<span class="hljs-string">&quot;DATABRICKS_HOST&quot;</span>)
+    token = os.getenv(<span class="hljs-string">&quot;DATABRICKS_TOKEN&quot;</span>)
+    
+    url = <span class="hljs-string">f&quot;<span class="hljs-subst">{workspace_url}</span>/serving-endpoints/cookidoo-agent-primary/invocations&quot;</span>
+    
+    headers = {
+        <span class="hljs-string">&quot;Authorization&quot;</span>: <span class="hljs-string">f&quot;Bearer <span class="hljs-subst">{token}</span>&quot;</span>,
+        <span class="hljs-string">&quot;Content-Type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>
+    }
+    
+    payload = {
+        <span class="hljs-string">&quot;messages&quot;</span>: [
+            {
+                <span class="hljs-string">&quot;role&quot;</span>: <span class="hljs-string">&quot;system&quot;</span>,
+                <span class="hljs-string">&quot;content&quot;</span>: <span class="hljs-string">&quot;You are an expert cooking assistant with deep knowledge of recipes and culinary techniques.&quot;</span>
+            },
+            {
+                <span class="hljs-string">&quot;role&quot;</span>: <span class="hljs-string">&quot;user&quot;</span>,
+                <span class="hljs-string">&quot;content&quot;</span>: prompt
+            }
+        ],
+        <span class="hljs-string">&quot;max_tokens&quot;</span>: <span class="hljs-number">2000</span>,
+        <span class="hljs-string">&quot;temperature&quot;</span>: <span class="hljs-number">0.7</span>
+    }
+    
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    
+    <span class="hljs-keyword">return</span> response.json()[<span class="hljs-string">&quot;choices&quot;</span>][<span class="hljs-number">0</span>][<span class="hljs-string">&quot;message&quot;</span>][<span class="hljs-string">&quot;content&quot;</span>]
+
+<span class="hljs-comment"># Test</span>
+result = query_llm_endpoint(<span class="hljs-string">&quot;How do I make pasta carbonara?&quot;</span>)
+<span class="hljs-built_in">print</span>(result)
+</code></pre>
+<h3 id="step-3-create-analytics-endpoint-claude-opus-41">Step 3: Create Analytics Endpoint (Claude Opus 4.1)</h3>
+<pre><code class="language-python"><span class="hljs-comment"># Create secondary endpoint for complex analytics tasks</span>
+analytics_endpoint = w.serving_endpoints.create(
+    name=<span class="hljs-string">&quot;cookidoo-agent-analytics&quot;</span>,
+    config=EndpointCoreConfigInput(
+        served_entities=[
+            ServedEntityInput(
+                entity_name=<span class="hljs-string">&quot;anthropic.claude-opus-4-1&quot;</span>,
+                entity_version=<span class="hljs-string">&quot;1&quot;</span>,
+                workload_size=<span class="hljs-string">&quot;Medium&quot;</span>,
+                scale_to_zero_enabled=<span class="hljs-literal">True</span>
+            )
+        ]
+    )
+)
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Analytics endpoint created: <span class="hljs-subst">{analytics_endpoint.name}</span>&quot;</span>)
+</code></pre>
+<hr>
+<h2 id="agentbricks-configuration">AgentBricks Configuration</h2>
+<p>AgentBricks orchestrates complex multi-step workflows involving the LLM, MCP server, and Databricks.</p>
+<h3 id="step-1-install-agentbricks">Step 1: Install AgentBricks</h3>
+<pre><code class="language-python"><span class="hljs-comment"># Install in Databricks cluster</span>
+%pip install databricks-agents agentbricks mlflow
+
+<span class="hljs-comment"># Or add to cluster configuration</span>
+{
+  <span class="hljs-string">&quot;libraries&quot;</span>: [
+    {<span class="hljs-string">&quot;pypi&quot;</span>: {<span class="hljs-string">&quot;package&quot;</span>: <span class="hljs-string">&quot;databricks-agents&quot;</span>}},
+    {<span class="hljs-string">&quot;pypi&quot;</span>: {<span class="hljs-string">&quot;package&quot;</span>: <span class="hljs-string">&quot;agentbricks&quot;</span>}},
+    {<span class="hljs-string">&quot;pypi&quot;</span>: {<span class="hljs-string">&quot;package&quot;</span>: <span class="hljs-string">&quot;mlflow&gt;=2.10.0&quot;</span>}}
+  ]
+}
+</code></pre>
+<h3 id="step-2-define-recipe-modification-agent">Step 2: Define Recipe Modification Agent</h3>
+<p>Save as <code>databricks/notebooks/agent_recipe_modification.py</code>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># Databricks notebook source</span>
+<span class="hljs-keyword">from</span> agentbricks <span class="hljs-keyword">import</span> Agent, Tool, Chain
+<span class="hljs-keyword">from</span> databricks.sdk <span class="hljs-keyword">import</span> WorkspaceClient
+<span class="hljs-keyword">import</span> mlflow
+
+<span class="hljs-comment"># COMMAND ----------</span>
+
+<span class="hljs-comment"># Initialize workspace client</span>
+w = WorkspaceClient()
+
+<span class="hljs-comment"># COMMAND ----------</span>
+
+<span class="hljs-comment"># Define tools for the agent</span>
+<span class="hljs-meta">@Tool(<span class="hljs-params">name=<span class="hljs-string">&quot;get_recipe&quot;</span>, description=<span class="hljs-string">&quot;Retrieve a recipe from Cookidoo by ID&quot;</span></span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_recipe</span>(<span class="hljs-params">recipe_id: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">dict</span>:
+    <span class="hljs-string">&quot;&quot;&quot;Fetch recipe from Databricks table.&quot;&quot;&quot;</span>
+    <span class="hljs-keyword">from</span> pyspark.sql <span class="hljs-keyword">import</span> functions <span class="hljs-keyword">as</span> F
+    
+    recipe_df = spark.table(<span class="hljs-string">&quot;cookidoo_agent.main.recipes_gold&quot;</span>).<span class="hljs-built_in">filter</span>(
+        F.col(<span class="hljs-string">&quot;recipe_id&quot;</span>) == recipe_id
+    )
+    
+    <span class="hljs-keyword">if</span> recipe_df.count() == <span class="hljs-number">0</span>:
+        <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">f&quot;Recipe <span class="hljs-subst">{recipe_id}</span> not found&quot;</span>)
+    
+    <span class="hljs-keyword">return</span> recipe_df.first().asDict()
+
+<span class="hljs-meta">@Tool(<span class="hljs-params">name=<span class="hljs-string">&quot;query_llm&quot;</span>, description=<span class="hljs-string">&quot;Query the LLM for recipe modifications&quot;</span></span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">query_llm</span>(<span class="hljs-params">prompt: <span class="hljs-built_in">str</span>, system_prompt: <span class="hljs-built_in">str</span> = <span class="hljs-literal">None</span></span>) -&gt; <span class="hljs-built_in">str</span>:
+    <span class="hljs-string">&quot;&quot;&quot;Query Claude Sonnet 4.5 endpoint.&quot;&quot;&quot;</span>
+    <span class="hljs-keyword">import</span> requests
+    <span class="hljs-keyword">import</span> os
+    
+    url = <span class="hljs-string">f&quot;<span class="hljs-subst">{os.getenv(<span class="hljs-string">&#x27;DATABRICKS_HOST&#x27;</span>)}</span>/serving-endpoints/cookidoo-agent-primary/invocations&quot;</span>
+    
+    messages = []
+    <span class="hljs-keyword">if</span> system_prompt:
+        messages.append({<span class="hljs-string">&quot;role&quot;</span>: <span class="hljs-string">&quot;system&quot;</span>, <span class="hljs-string">&quot;content&quot;</span>: system_prompt})
+    messages.append({<span class="hljs-string">&quot;role&quot;</span>: <span class="hljs-string">&quot;user&quot;</span>, <span class="hljs-string">&quot;content&quot;</span>: prompt})
+    
+    response = requests.post(
+        url,
+        json={<span class="hljs-string">&quot;messages&quot;</span>: messages, <span class="hljs-string">&quot;max_tokens&quot;</span>: <span class="hljs-number">2000</span>, <span class="hljs-string">&quot;temperature&quot;</span>: <span class="hljs-number">0.7</span>},
+        headers={<span class="hljs-string">&quot;Authorization&quot;</span>: <span class="hljs-string">f&quot;Bearer <span class="hljs-subst">{os.getenv(<span class="hljs-string">&#x27;DATABRICKS_TOKEN&#x27;</span>)}</span>&quot;</span>}
+    )
+    
+    <span class="hljs-keyword">return</span> response.json()[<span class="hljs-string">&quot;choices&quot;</span>][<span class="hljs-number">0</span>][<span class="hljs-string">&quot;message&quot;</span>][<span class="hljs-string">&quot;content&quot;</span>]
+
+<span class="hljs-meta">@Tool(<span class="hljs-params">name=<span class="hljs-string">&quot;save_recipe&quot;</span>, description=<span class="hljs-string">&quot;Save modified recipe to Databricks&quot;</span></span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">save_recipe</span>(<span class="hljs-params">recipe_data: <span class="hljs-built_in">dict</span></span>) -&gt; <span class="hljs-built_in">str</span>:
+    <span class="hljs-string">&quot;&quot;&quot;Save recipe to Delta table.&quot;&quot;&quot;</span>
+    <span class="hljs-keyword">from</span> pyspark.sql <span class="hljs-keyword">import</span> Row
+    <span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime
+    
+    recipe_data[<span class="hljs-string">&quot;updated_at&quot;</span>] = datetime.utcnow()
+    
+    recipe_df = spark.createDataFrame([Row(**recipe_data)])
+    
+    recipe_df.write.<span class="hljs-built_in">format</span>(<span class="hljs-string">&quot;delta&quot;</span>).mode(<span class="hljs-string">&quot;append&quot;</span>).saveAsTable(
+        <span class="hljs-string">&quot;cookidoo_agent.main.recipes_gold&quot;</span>
+    )
+    
+    <span class="hljs-keyword">return</span> recipe_data[<span class="hljs-string">&quot;recipe_id&quot;</span>]
+
+<span class="hljs-comment"># COMMAND ----------</span>
+
+<span class="hljs-comment"># Define the Recipe Modification Agent</span>
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">RecipeModificationAgent</span>(<span class="hljs-title class_ inherited__">Agent</span>):
+    <span class="hljs-string">&quot;&quot;&quot;Agent for modifying recipes based on user requirements.&quot;&quot;&quot;</span>
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):
+        <span class="hljs-built_in">super</span>().__init__(
+            name=<span class="hljs-string">&quot;RecipeModificationAgent&quot;</span>,
+            description=<span class="hljs-string">&quot;Modifies recipes based on natural language instructions&quot;</span>,
+            tools=[get_recipe, query_llm, save_recipe]
+        )
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">modify_recipe</span>(<span class="hljs-params">self, recipe_id: <span class="hljs-built_in">str</span>, modification_prompt: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">dict</span>:
+        <span class="hljs-string">&quot;&quot;&quot;
+        Main workflow for recipe modification.
+        
+        Steps:
+        1. Retrieve original recipe
+        2. Generate modification using LLM
+        3. Validate modifications
+        4. Save modified recipe
+        5. Return both versions
+        &quot;&quot;&quot;</span>
+        
+        <span class="hljs-comment"># Step 1: Get original recipe</span>
+        original_recipe = self.run_tool(<span class="hljs-string">&quot;get_recipe&quot;</span>, recipe_id=recipe_id)
+        
+        <span class="hljs-comment"># Step 2: Generate modification</span>
+        system_prompt = <span class="hljs-string">&quot;&quot;&quot;You are an expert chef and recipe developer. 
+        When modifying recipes, ensure:
+        - Ingredient substitutions are culinarily sound
+        - Cooking times/temps are adjusted appropriately
+        - Instructions remain clear and actionable
+        - The modified recipe will actually work
+        
+        Return the modified recipe in the same JSON structure as the original.&quot;&quot;&quot;</span>
+        
+        modification_prompt_full = <span class="hljs-string">f&quot;&quot;&quot;
+        Original Recipe:
+        <span class="hljs-subst">{original_recipe}</span>
+        
+        User Request: <span class="hljs-subst">{modification_prompt}</span>
+        
+        Please modify the recipe according to the user&#x27;s request and return the complete modified recipe.
+        &quot;&quot;&quot;</span>
+        
+        modified_recipe_str = self.run_tool(
+            <span class="hljs-string">&quot;query_llm&quot;</span>,
+            prompt=modification_prompt_full,
+            system_prompt=system_prompt
+        )
+        
+        <span class="hljs-comment"># Parse and validate (simplified - add proper parsing)</span>
+        <span class="hljs-keyword">import</span> json
+        modified_recipe = json.loads(modified_recipe_str)
+        
+        <span class="hljs-comment"># Step 3: Generate new recipe ID</span>
+        <span class="hljs-keyword">import</span> uuid
+        modified_recipe[<span class="hljs-string">&quot;recipe_id&quot;</span>] = <span class="hljs-string">f&quot;modified_<span class="hljs-subst">{uuid.uuid4().<span class="hljs-built_in">hex</span>[:<span class="hljs-number">8</span>]}</span>&quot;</span>
+        modified_recipe[<span class="hljs-string">&quot;source&quot;</span>] = <span class="hljs-string">&quot;llm_generated&quot;</span>
+        
+        <span class="hljs-comment"># Step 4: Save modified recipe</span>
+        new_recipe_id = self.run_tool(<span class="hljs-string">&quot;save_recipe&quot;</span>, recipe_data=modified_recipe)
+        
+        <span class="hljs-comment"># Step 5: Log modification to tracking table</span>
+        self._log_modification(original_recipe[<span class="hljs-string">&quot;recipe_id&quot;</span>], new_recipe_id, modification_prompt)
+        
+        <span class="hljs-keyword">return</span> {
+            <span class="hljs-string">&quot;original_recipe&quot;</span>: original_recipe,
+            <span class="hljs-string">&quot;modified_recipe&quot;</span>: modified_recipe,
+            <span class="hljs-string">&quot;modification_prompt&quot;</span>: modification_prompt
+        }
+    
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_log_modification</span>(<span class="hljs-params">self, original_id: <span class="hljs-built_in">str</span>, modified_id: <span class="hljs-built_in">str</span>, prompt: <span class="hljs-built_in">str</span></span>):
+        <span class="hljs-string">&quot;&quot;&quot;Log modification to tracking table.&quot;&quot;&quot;</span>
+        <span class="hljs-keyword">from</span> pyspark.sql <span class="hljs-keyword">import</span> Row
+        <span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime
+        <span class="hljs-keyword">import</span> uuid
+        
+        log_data = {
+            <span class="hljs-string">&quot;modification_id&quot;</span>: <span class="hljs-string">f&quot;mod_<span class="hljs-subst">{uuid.uuid4().<span class="hljs-built_in">hex</span>[:<span class="hljs-number">12</span>]}</span>&quot;</span>,
+            <span class="hljs-string">&quot;original_recipe_id&quot;</span>: original_id,
+            <span class="hljs-string">&quot;modified_recipe_id&quot;</span>: modified_id,
+            <span class="hljs-string">&quot;modification_prompt&quot;</span>: prompt,
+            <span class="hljs-string">&quot;created_at&quot;</span>: datetime.utcnow()
+        }
+        
+        log_df = spark.createDataFrame([Row(**log_data)])
+        log_df.write.<span class="hljs-built_in">format</span>(<span class="hljs-string">&quot;delta&quot;</span>).mode(<span class="hljs-string">&quot;append&quot;</span>).saveAsTable(
+            <span class="hljs-string">&quot;cookidoo_agent.main.recipe_modifications&quot;</span>
+        )
+
+<span class="hljs-comment"># COMMAND ----------</span>
+
+<span class="hljs-comment"># Register agent with MLflow</span>
+agent = RecipeModificationAgent()
+
+<span class="hljs-keyword">with</span> mlflow.start_run(run_name=<span class="hljs-string">&quot;recipe_modification_agent&quot;</span>):
+    mlflow.log_param(<span class="hljs-string">&quot;agent_name&quot;</span>, agent.name)
+    mlflow.log_param(<span class="hljs-string">&quot;model_endpoint&quot;</span>, <span class="hljs-string">&quot;cookidoo-agent-primary&quot;</span>)
+    
+    <span class="hljs-comment"># Test the agent</span>
+    test_result = agent.modify_recipe(
+        recipe_id=<span class="hljs-string">&quot;cookidoo_12345&quot;</span>,
+        modification_prompt=<span class="hljs-string">&quot;Make this recipe vegan&quot;</span>
+    )
+    
+    mlflow.log_dict(test_result, <span class="hljs-string">&quot;test_modification.json&quot;</span>)
+    
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Agent registered successfully!&quot;</span>)
+</code></pre>
+<hr>
+<h2 id="mcp-server-integration">MCP Server Integration</h2>
+<p>The Model Context Protocol (MCP) server provides standardized access to the Cookidoo API.</p>
+<h3 id="databricks-integration-approach">Databricks Integration Approach</h3>
+<p>Since the MCP server runs as an external service, we integrate it with Databricks through:</p>
+<ol>
+<li><strong>REST API calls</strong> from Databricks notebooks and jobs</li>
+<li><strong>Data ingestion</strong> - MCP server writes recipe data to cloud storage, which DLT pipelines consume</li>
+<li><strong>Streaming integration</strong> - Real-time recipe updates</li>
+</ol>
+<h3 id="step-1-configure-mcp-server-connection">Step 1: Configure MCP Server Connection</h3>
+<pre><code class="language-python"><span class="hljs-comment"># databricks/notebooks/mcp_integration_config.py</span>
+<span class="hljs-keyword">import</span> os
+<span class="hljs-keyword">from</span> databricks.sdk <span class="hljs-keyword">import</span> WorkspaceClient
+
+<span class="hljs-comment"># Store MCP server configuration in Databricks secrets</span>
+w = WorkspaceClient()
+
+<span class="hljs-comment"># Create secret scope for MCP credentials</span>
+<span class="hljs-keyword">try</span>:
+    w.secrets.create_scope(scope=<span class="hljs-string">&quot;cookidoo-mcp&quot;</span>)
+<span class="hljs-keyword">except</span> Exception:
+    <span class="hljs-keyword">pass</span>  <span class="hljs-comment"># Scope already exists</span>
+
+<span class="hljs-comment"># Store MCP server URL (actual secrets stored via CLI)</span>
+<span class="hljs-comment"># databricks secrets put-secret cookidoo-mcp mcp-server-url</span>
+<span class="hljs-comment"># databricks secrets put-secret cookidoo-mcp cookidoo-username</span>
+<span class="hljs-comment"># databricks secrets put-secret cookidoo-mcp cookidoo-password</span>
+
+<span class="hljs-comment"># Function to get MCP server URL</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_mcp_config</span>():
+    <span class="hljs-keyword">return</span> {
+        <span class="hljs-string">&quot;mcp_server_url&quot;</span>: dbutils.secrets.get(scope=<span class="hljs-string">&quot;cookidoo-mcp&quot;</span>, key=<span class="hljs-string">&quot;mcp-server-url&quot;</span>),
+        <span class="hljs-string">&quot;username&quot;</span>: dbutils.secrets.get(scope=<span class="hljs-string">&quot;cookidoo-mcp&quot;</span>, key=<span class="hljs-string">&quot;cookidoo-username&quot;</span>),
+        <span class="hljs-string">&quot;password&quot;</span>: dbutils.secrets.get(scope=<span class="hljs-string">&quot;cookidoo-mcp&quot;</span>, key=<span class="hljs-string">&quot;cookidoo-password&quot;</span>)
+    }
+</code></pre>
+<h3 id="step-2-create-mcp-integration-functions">Step 2: Create MCP Integration Functions</h3>
+<pre><code class="language-python"><span class="hljs-comment"># databricks/notebooks/mcp_integration_functions.py</span>
+<span class="hljs-keyword">import</span> requests
+<span class="hljs-keyword">from</span> typing <span class="hljs-keyword">import</span> <span class="hljs-type">Dict</span>, <span class="hljs-type">List</span>, <span class="hljs-type">Optional</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">fetch_recipe_from_cookidoo</span>(<span class="hljs-params">recipe_id: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-type">Dict</span>:
+    <span class="hljs-string">&quot;&quot;&quot;Fetch a recipe from Cookidoo via MCP server.&quot;&quot;&quot;</span>
+    
+    config = get_mcp_config()
+    
+    response = requests.get(
+        <span class="hljs-string">f&quot;<span class="hljs-subst">{config[<span class="hljs-string">&#x27;mcp_server_url&#x27;</span>]}</span>/api/recipes/<span class="hljs-subst">{recipe_id}</span>&quot;</span>,
+        headers={<span class="hljs-string">&quot;Authorization&quot;</span>: <span class="hljs-string">f&quot;Bearer <span class="hljs-subst">{get_mcp_auth_token()}</span>&quot;</span>}
+    )
+    
+    response.raise_for_status()
+    <span class="hljs-keyword">return</span> response.json()
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">save_recipe_to_cookidoo</span>(<span class="hljs-params">recipe_data: <span class="hljs-type">Dict</span></span>) -&gt; <span class="hljs-built_in">str</span>:
+    <span class="hljs-string">&quot;&quot;&quot;Save a modified recipe to Cookidoo via MCP server.&quot;&quot;&quot;</span>
+    
+    config = get_mcp_config()
+    
+    response = requests.post(
+        <span class="hljs-string">f&quot;<span class="hljs-subst">{config[<span class="hljs-string">&#x27;mcp_server_url&#x27;</span>]}</span>/api/recipes/save&quot;</span>,
+        json=recipe_data,
+        headers={<span class="hljs-string">&quot;Authorization&quot;</span>: <span class="hljs-string">f&quot;Bearer <span class="hljs-subst">{get_mcp_auth_token()}</span>&quot;</span>}
+    )
+    
+    response.raise_for_status()
+    <span class="hljs-keyword">return</span> response.json()[<span class="hljs-string">&quot;recipe_id&quot;</span>]
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">sync_recipes_to_delta</span>():
+    <span class="hljs-string">&quot;&quot;&quot;
+    Batch sync recipes from Cookidoo to Delta Lake.
+    This function is run periodically to keep data fresh.
+    &quot;&quot;&quot;</span>
+    config = get_mcp_config()
+    
+    <span class="hljs-comment"># Fetch recipe list</span>
+    response = requests.get(
+        <span class="hljs-string">f&quot;<span class="hljs-subst">{config[<span class="hljs-string">&#x27;mcp_server_url&#x27;</span>]}</span>/api/recipes/list&quot;</span>,
+        headers={<span class="hljs-string">&quot;Authorization&quot;</span>: <span class="hljs-string">f&quot;Bearer <span class="hljs-subst">{get_mcp_auth_token()}</span>&quot;</span>}
+    )
+    
+    recipes = response.json()[<span class="hljs-string">&quot;recipes&quot;</span>]
+    
+    <span class="hljs-comment"># Write to Delta bronze table</span>
+    <span class="hljs-keyword">from</span> pyspark.sql <span class="hljs-keyword">import</span> Row
+    <span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime
+    
+    recipe_rows = [Row(**{**recipe, <span class="hljs-string">&quot;ingestion_timestamp&quot;</span>: datetime.utcnow()}) 
+                   <span class="hljs-keyword">for</span> recipe <span class="hljs-keyword">in</span> recipes]
+    
+    recipes_df = spark.createDataFrame(recipe_rows)
+    
+    recipes_df.write.<span class="hljs-built_in">format</span>(<span class="hljs-string">&quot;delta&quot;</span>).mode(<span class="hljs-string">&quot;append&quot;</span>).saveAsTable(
+        <span class="hljs-string">&quot;cookidoo_agent.staging.recipes_bronze&quot;</span>
+    )
+    
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">len</span>(recipes)
+
+<span class="hljs-comment"># Helper function for authentication</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_mcp_auth_token</span>() -&gt; <span class="hljs-built_in">str</span>:
+    <span class="hljs-string">&quot;&quot;&quot;Get authentication token for MCP server.&quot;&quot;&quot;</span>
+    config = get_mcp_config()
+    
+    response = requests.post(
+        <span class="hljs-string">f&quot;<span class="hljs-subst">{config[<span class="hljs-string">&#x27;mcp_server_url&#x27;</span>]}</span>/auth/token&quot;</span>,
+        json={
+            <span class="hljs-string">&quot;username&quot;</span>: config[<span class="hljs-string">&quot;username&quot;</span>],
+            <span class="hljs-string">&quot;password&quot;</span>: config[<span class="hljs-string">&quot;password&quot;</span>]
+        }
+    )
+    
+    <span class="hljs-keyword">return</span> response.json()[<span class="hljs-string">&quot;access_token&quot;</span>]
+</code></pre>
+<h3 id="step-3-schedule-mcp-sync-job">Step 3: Schedule MCP Sync Job</h3>
+<pre><code class="language-python"><span class="hljs-comment"># databricks/scripts/schedule_mcp_sync_job.py</span>
+<span class="hljs-keyword">from</span> databricks.sdk <span class="hljs-keyword">import</span> WorkspaceClient
+<span class="hljs-keyword">from</span> databricks.sdk.service.jobs <span class="hljs-keyword">import</span> (
+    Task,
+    TaskDependency,
+    NotebookTask,
+    JobCluster,
+    CronSchedule
+)
+
+w = WorkspaceClient()
+
+<span class="hljs-comment"># Create scheduled job for recipe sync</span>
+job = w.jobs.create(
+    name=<span class="hljs-string">&quot;cookidoo_recipe_sync&quot;</span>,
+    tasks=[
+        Task(
+            task_key=<span class="hljs-string">&quot;sync_recipes&quot;</span>,
+            description=<span class="hljs-string">&quot;Sync recipes from Cookidoo via MCP server&quot;</span>,
+            notebook_task=NotebookTask(
+                notebook_path=<span class="hljs-string">&quot;/Workspace/cookidoo-agent/databricks/notebooks/mcp_sync_recipes&quot;</span>,
+                base_parameters={}
+            ),
+            job_cluster_key=<span class="hljs-string">&quot;main_cluster&quot;</span>
+        )
+    ],
+    job_clusters=[
+        JobCluster(
+            job_cluster_key=<span class="hljs-string">&quot;main_cluster&quot;</span>,
+            new_cluster={
+                <span class="hljs-string">&quot;spark_version&quot;</span>: <span class="hljs-string">&quot;14.3.x-scala2.12&quot;</span>,
+                <span class="hljs-string">&quot;node_type_id&quot;</span>: <span class="hljs-string">&quot;Standard_DS3_v2&quot;</span>,
+                <span class="hljs-string">&quot;num_workers&quot;</span>: <span class="hljs-number">2</span>
+            }
+        )
+    ],
+    schedule=CronSchedule(
+        quartz_cron_expression=<span class="hljs-string">&quot;0 0 2 * * ?&quot;</span>,  <span class="hljs-comment"># Daily at 2 AM</span>
+        timezone_id=<span class="hljs-string">&quot;UTC&quot;</span>,
+        pause_status=<span class="hljs-string">&quot;UNPAUSED&quot;</span>
+    )
+)
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Sync job created: <span class="hljs-subst">{job.job_id}</span>&quot;</span>)
+</code></pre>
+<hr>
+<h2 id="genie-space-setup">Genie Space Setup</h2>
+<p>Genie provides a natural language interface for analytics and data exploration.</p>
+<h3 id="step-1-create-genie-space">Step 1: Create Genie Space</h3>
+<pre><code class="language-python"><span class="hljs-comment"># Via Databricks UI or SDK</span>
+<span class="hljs-keyword">from</span> databricks.sdk <span class="hljs-keyword">import</span> WorkspaceClient
+
+w = WorkspaceClient()
+
+<span class="hljs-comment"># Genie spaces are typically created through the UI</span>
+<span class="hljs-comment"># Navigate to: Data Intelligence Platform → Genie → Create Space</span>
+
+<span class="hljs-comment"># Configuration:</span>
+<span class="hljs-comment"># - Name: &quot;Cookidoo Recipe Analytics&quot;</span>
+<span class="hljs-comment"># - Description: &quot;Natural language analytics for recipe data and user interactions&quot;</span>
+<span class="hljs-comment"># - Catalog: cookidoo_agent</span>
+<span class="hljs-comment"># - Schemas: main, analytics</span>
+</code></pre>
+<h3 id="step-2-configure-genie-instructions">Step 2: Configure Genie Instructions</h3>
+<p>Create instructions file for Genie to understand your domain:</p>
+<pre><code class="language-markdown"><span class="hljs-section"># Genie Instructions for Cookidoo Agent Analytics</span>
+
+<span class="hljs-section">## Domain Context</span>
+This workspace contains data about recipes, user interactions, modifications, and shopping lists
+for the Cookidoo Agent Assistant platform.
+
+<span class="hljs-section">## Key Tables</span>
+<span class="hljs-bullet">-</span> <span class="hljs-strong">**recipes<span class="hljs-emphasis">_gold**: Main recipe data with full details
+- **user_</span>interactions**</span>: User activity events
+<span class="hljs-bullet">-</span> <span class="hljs-strong">**recipe<span class="hljs-emphasis">_modifications**: Recipe modification history
+- **shopping_</span>lists**</span>: User-generated shopping lists
+<span class="hljs-bullet">-</span> <span class="hljs-strong">**recipe<span class="hljs-emphasis">_statistics**: Aggregated metrics
+
+## Common Queries
+- &quot;How many recipes do we have by difficulty level?&quot;
+- &quot;What are the most popular dietary restrictions?&quot;
+- &quot;Show me recipe modification trends over time&quot;
+- &quot;Which recipes have the highest engagement?&quot;
+- &quot;What&#x27;s the average cooking time for vegan recipes?&quot;
+
+## Field Explanations
+- **recipe_</span>id**</span>: Unique identifier for each recipe
+<span class="hljs-bullet">-</span> <span class="hljs-strong">**is<span class="hljs-emphasis">_quick_</span>recipe**</span>: Recipes with total<span class="hljs-emphasis">_time_</span>minutes &lt;= 30
+<span class="hljs-bullet">-</span> <span class="hljs-strong">**dietary<span class="hljs-emphasis">_info**: Array of dietary tags (vegetarian, vegan, etc.)
+- **interaction_</span>type**</span>: Type of user action (recipe<span class="hljs-emphasis">_view, recipe_</span>modify, chat, shopping<span class="hljs-emphasis">_list)
+</span></code></pre>
+<h3 id="step-3-create-sample-genie-queries">Step 3: Create Sample Genie Queries</h3>
+<pre><code class="language-sql"><span class="hljs-comment">-- Save these as &quot;Saved Queries&quot; in Genie for quick access</span>
+
+<span class="hljs-comment">-- Query 1: Recipe popularity by difficulty</span>
+<span class="hljs-keyword">SELECT</span> 
+    difficulty,
+    <span class="hljs-built_in">COUNT</span>(<span class="hljs-operator">*</span>) <span class="hljs-keyword">as</span> recipe_count,
+    <span class="hljs-built_in">AVG</span>(total_time_minutes) <span class="hljs-keyword">as</span> avg_time
+<span class="hljs-keyword">FROM</span> cookidoo_agent.main.recipes_gold
+<span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> difficulty
+<span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> recipe_count <span class="hljs-keyword">DESC</span>;
+
+<span class="hljs-comment">-- Query 2: User engagement trends</span>
+<span class="hljs-keyword">SELECT</span> 
+    DATE_TRUNC(<span class="hljs-string">&#x27;day&#x27;</span>, <span class="hljs-type">timestamp</span>) <span class="hljs-keyword">as</span> <span class="hljs-type">date</span>,
+    interaction_type,
+    <span class="hljs-built_in">COUNT</span>(<span class="hljs-operator">*</span>) <span class="hljs-keyword">as</span> interaction_count
+<span class="hljs-keyword">FROM</span> cookidoo_agent.main.user_interactions
+<span class="hljs-keyword">WHERE</span> <span class="hljs-type">timestamp</span> <span class="hljs-operator">&gt;=</span> <span class="hljs-built_in">CURRENT_DATE</span> <span class="hljs-operator">-</span> <span class="hljs-type">INTERVAL</span> <span class="hljs-number">30</span> DAYS
+<span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> <span class="hljs-type">date</span>, interaction_type
+<span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> <span class="hljs-type">date</span> <span class="hljs-keyword">DESC</span>;
+
+<span class="hljs-comment">-- Query 3: Most modified recipes</span>
+<span class="hljs-keyword">SELECT</span> 
+    r.title,
+    r.recipe_id,
+    <span class="hljs-built_in">COUNT</span>(m.modification_id) <span class="hljs-keyword">as</span> modification_count
+<span class="hljs-keyword">FROM</span> cookidoo_agent.main.recipes_gold r
+<span class="hljs-keyword">JOIN</span> cookidoo_agent.main.recipe_modifications m 
+    <span class="hljs-keyword">ON</span> r.recipe_id <span class="hljs-operator">=</span> m.original_recipe_id
+<span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> r.title, r.recipe_id
+<span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> modification_count <span class="hljs-keyword">DESC</span>
+LIMIT <span class="hljs-number">20</span>;
+</code></pre>
+<hr>
+<h2 id="notebooks-deployment">Notebooks Deployment</h2>
+<p>Deploy analytical and operational notebooks to the Databricks workspace.</p>
+<h3 id="step-1-create-notebooks-directory-structure">Step 1: Create Notebooks Directory Structure</h3>
+<pre><code>/Workspace/cookidoo-agent/
+├── databricks/
+│   ├── notebooks/
+│   │   ├── setup/
+│   │   │   ├── 01_initial_setup.py
+│   │   │   ├── 02_create_tables.sql
+│   │   │   └── 03_load_sample_data.py
+│   │   ├── dlt/
+│   │   │   ├── dlt_recipes_bronze_silver_gold.py
+│   │   │   └── dlt_interactions_pipeline.py
+│   │   ├── analytics/
+│   │   │   ├── recipe_analytics_dashboard.py
+│   │   │   ├── user_engagement_analysis.py
+│   │   │   └── modification_trends.py
+│   │   └── agents/
+│   │       ├── agent_recipe_modification.py
+│   │       ├── agent_qa.py
+│   │       └── agent_shopping_list.py
+</code></pre>
+<h3 id="step-2-deploy-notebooks-via-cli">Step 2: Deploy Notebooks via CLI</h3>
+<pre><code class="language-powershell"><span class="hljs-comment"># Import all notebooks to workspace</span>
+databricks workspace <span class="hljs-built_in">import-dir</span> `
+    ./databricks/notebooks `
+    /Workspace/cookidoo<span class="hljs-literal">-llm</span>/databricks/notebooks `
+    <span class="hljs-literal">--overwrite</span>
+
+<span class="hljs-comment"># Verify import</span>
+databricks workspace <span class="hljs-built_in">ls</span> /Workspace/cookidoo<span class="hljs-literal">-llm</span>/databricks/notebooks
+</code></pre>
+<h3 id="step-3-create-analytics-dashboard-notebook">Step 3: Create Analytics Dashboard Notebook</h3>
+<p>Save as <code>databricks/notebooks/analytics/recipe_analytics_dashboard.py</code>:</p>
+<pre><code class="language-python"><span class="hljs-comment"># Databricks notebook source</span>
+<span class="hljs-comment"># MAGIC %md</span>
+<span class="hljs-comment"># MAGIC # Recipe Analytics Dashboard</span>
+<span class="hljs-comment"># MAGIC </span>
+<span class="hljs-comment"># MAGIC Comprehensive analytics for recipe data and user engagement.</span>
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-keyword">import</span> plotly.express <span class="hljs-keyword">as</span> px
+<span class="hljs-keyword">import</span> plotly.graph_objects <span class="hljs-keyword">as</span> go
+<span class="hljs-keyword">from</span> pyspark.sql <span class="hljs-keyword">import</span> functions <span class="hljs-keyword">as</span> F
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># MAGIC %md</span>
+<span class="hljs-comment"># MAGIC ## Recipe Overview Statistics</span>
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># Get recipe statistics</span>
+stats_df = spark.table(<span class="hljs-string">&quot;cookidoo_agent.main.recipe_statistics&quot;</span>)
+stats = stats_df.collect()[<span class="hljs-number">0</span>]
+
+<span class="hljs-comment"># Display key metrics</span>
+displayHTML(<span class="hljs-string">f&quot;&quot;&quot;
+&lt;div style=&quot;display: flex; justify-content: space-around; margin: 20px;&quot;&gt;
+    &lt;div style=&quot;text-align: center;&quot;&gt;
+        &lt;h2&gt;<span class="hljs-subst">{stats.total_recipes:,}</span>&lt;/h2&gt;
+        &lt;p&gt;Total Recipes&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div style=&quot;text-align: center;&quot;&gt;
+        &lt;h2&gt;<span class="hljs-subst">{stats.avg_total_time:<span class="hljs-number">.0</span>f}</span> min&lt;/h2&gt;
+        &lt;p&gt;Avg Cook Time&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div style=&quot;text-align: center;&quot;&gt;
+        &lt;h2&gt;<span class="hljs-subst">{stats.vegetarian_count:,}</span>&lt;/h2&gt;
+        &lt;p&gt;Vegetarian&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div style=&quot;text-align: center;&quot;&gt;
+        &lt;h2&gt;<span class="hljs-subst">{stats.vegan_count:,}</span>&lt;/h2&gt;
+        &lt;p&gt;Vegan&lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+&quot;&quot;&quot;</span>)
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># MAGIC %md</span>
+<span class="hljs-comment"># MAGIC ## Recipe Distribution by Difficulty</span>
+
+<span class="hljs-comment"># COMMAND ----------</span>
+difficulty_df = (
+    spark.table(<span class="hljs-string">&quot;cookidoo_agent.main.recipes_gold&quot;</span>)
+    .groupBy(<span class="hljs-string">&quot;difficulty&quot;</span>)
+    .agg(F.count(<span class="hljs-string">&quot;*&quot;</span>).alias(<span class="hljs-string">&quot;count&quot;</span>))
+    .toPandas()
+)
+
+fig = px.pie(
+    difficulty_df,
+    values=<span class="hljs-string">&#x27;count&#x27;</span>,
+    names=<span class="hljs-string">&#x27;difficulty&#x27;</span>,
+    title=<span class="hljs-string">&#x27;Recipe Distribution by Difficulty Level&#x27;</span>
+)
+fig.show()
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># MAGIC %md</span>
+<span class="hljs-comment"># MAGIC ## Most Popular Recipe Tags</span>
+
+<span class="hljs-comment"># COMMAND ----------</span>
+tags_df = (
+    spark.table(<span class="hljs-string">&quot;cookidoo_agent.main.recipes_gold&quot;</span>)
+    .select(F.explode(<span class="hljs-string">&quot;tags&quot;</span>).alias(<span class="hljs-string">&quot;tag&quot;</span>))
+    .groupBy(<span class="hljs-string">&quot;tag&quot;</span>)
+    .agg(F.count(<span class="hljs-string">&quot;*&quot;</span>).alias(<span class="hljs-string">&quot;count&quot;</span>))
+    .orderBy(F.desc(<span class="hljs-string">&quot;count&quot;</span>))
+    .limit(<span class="hljs-number">20</span>)
+    .toPandas()
+)
+
+fig = px.bar(
+    tags_df,
+    x=<span class="hljs-string">&#x27;count&#x27;</span>,
+    y=<span class="hljs-string">&#x27;tag&#x27;</span>,
+    orientation=<span class="hljs-string">&#x27;h&#x27;</span>,
+    title=<span class="hljs-string">&#x27;Top 20 Recipe Tags&#x27;</span>
+)
+fig.update_layout(yaxis={<span class="hljs-string">&#x27;categoryorder&#x27;</span>:<span class="hljs-string">&#x27;total ascending&#x27;</span>})
+fig.show()
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># MAGIC %md</span>
+<span class="hljs-comment"># MAGIC ## User Engagement Trends (Last 30 Days)</span>
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime, timedelta
+
+thirty_days_ago = datetime.now() - timedelta(days=<span class="hljs-number">30</span>)
+
+engagement_df = (
+    spark.table(<span class="hljs-string">&quot;cookidoo_agent.main.user_interactions&quot;</span>)
+    .<span class="hljs-built_in">filter</span>(F.col(<span class="hljs-string">&quot;timestamp&quot;</span>) &gt;= thirty_days_ago)
+    .groupBy(
+        F.date_trunc(<span class="hljs-string">&quot;day&quot;</span>, <span class="hljs-string">&quot;timestamp&quot;</span>).alias(<span class="hljs-string">&quot;date&quot;</span>),
+        <span class="hljs-string">&quot;interaction_type&quot;</span>
+    )
+    .agg(F.count(<span class="hljs-string">&quot;*&quot;</span>).alias(<span class="hljs-string">&quot;count&quot;</span>))
+    .orderBy(<span class="hljs-string">&quot;date&quot;</span>)
+    .toPandas()
+)
+
+fig = px.line(
+    engagement_df,
+    x=<span class="hljs-string">&#x27;date&#x27;</span>,
+    y=<span class="hljs-string">&#x27;count&#x27;</span>,
+    color=<span class="hljs-string">&#x27;interaction_type&#x27;</span>,
+    title=<span class="hljs-string">&#x27;User Engagement Trends (Last 30 Days)&#x27;</span>
+)
+fig.show()
+
+<span class="hljs-comment"># COMMAND ----------</span>
+<span class="hljs-comment"># MAGIC %md</span>
+<span class="hljs-comment"># MAGIC ## Recipe Modification Analysis</span>
+
+<span class="hljs-comment"># COMMAND ----------</span>
+mod_trends_df = (
+    spark.table(<span class="hljs-string">&quot;cookidoo_agent.main.recipe_modifications&quot;</span>)
+    .groupBy(F.date_trunc(<span class="hljs-string">&quot;day&quot;</span>, <span class="hljs-string">&quot;created_at&quot;</span>).alias(<span class="hljs-string">&quot;date&quot;</span>))
+    .agg(F.count(<span class="hljs-string">&quot;*&quot;</span>).alias(<span class="hljs-string">&quot;modification_count&quot;</span>))
+    .orderBy(<span class="hljs-string">&quot;date&quot;</span>)
+    .limit(<span class="hljs-number">90</span>)
+    .toPandas()
+)
+
+fig = px.area(
+    mod_trends_df,
+    x=<span class="hljs-string">&#x27;date&#x27;</span>,
+    y=<span class="hljs-string">&#x27;modification_count&#x27;</span>,
+    title=<span class="hljs-string">&#x27;Recipe Modifications Over Time (Last 90 Days)&#x27;</span>
+)
+fig.show()
+</code></pre>
+<hr>
+<h2 id="monitoring--logging">Monitoring &amp; Logging</h2>
+<h3 id="step-1-enable-databricks-monitoring">Step 1: Enable Databricks Monitoring</h3>
+<pre><code class="language-python"><span class="hljs-comment"># Create monitoring dashboard in Databricks SQL</span>
+
+-- Query <span class="hljs-number">1</span>: Model endpoint performance
+SELECT 
+    timestamp,
+    endpoint_name,
+    status_code,
+    execution_duration_ms,
+    request_id
+FROM system.serving.serving_endpoint_request_logs
+WHERE endpoint_name IN (<span class="hljs-string">&#x27;cookidoo-agent-primary&#x27;</span>, <span class="hljs-string">&#x27;cookidoo-agent-analytics&#x27;</span>)
+    AND timestamp &gt;= CURRENT_TIMESTAMP - INTERVAL <span class="hljs-number">1</span> HOUR
+ORDER BY timestamp DESC;
+
+-- Query <span class="hljs-number">2</span>: DLT pipeline health
+SELECT 
+    pipeline_id,
+    update_id,
+    state,
+    creation_time,
+    latest_update_time
+FROM system.pipelines.pipeline_update_events
+WHERE pipeline_id = <span class="hljs-string">&#x27;&lt;your-pipeline-id&gt;&#x27;</span>
+ORDER BY creation_time DESC
+LIMIT <span class="hljs-number">100</span>;
+
+-- Query <span class="hljs-number">3</span>: Vector search query performance
+SELECT 
+    timestamp,
+    index_name,
+    query_text,
+    num_results,
+    execution_time_ms
+FROM system.vector_search.query_logs
+WHERE index_name = <span class="hljs-string">&#x27;cookidoo_agent.main.recipe_embeddings_index&#x27;</span>
+ORDER BY timestamp DESC;
+</code></pre>
+<h3 id="step-2-set-up-alerts">Step 2: Set Up Alerts</h3>
+<pre><code class="language-python"><span class="hljs-comment"># databricks/scripts/setup_alerts.py</span>
+<span class="hljs-keyword">from</span> databricks.sdk <span class="hljs-keyword">import</span> WorkspaceClient
+<span class="hljs-keyword">from</span> databricks.sdk.service.sql <span class="hljs-keyword">import</span> Alert, AlertOptions
+
+w = WorkspaceClient()
+
+<span class="hljs-comment"># Create alert for high error rate</span>
+alert = w.alerts.create(
+    name=<span class="hljs-string">&quot;cookidoo_agent_high_error_rate&quot;</span>,
+    options=AlertOptions(
+        column=<span class="hljs-string">&quot;error_rate&quot;</span>,
+        op=<span class="hljs-string">&quot;&gt;=&quot;</span>,
+        value=<span class="hljs-number">0.05</span>,  <span class="hljs-comment"># Alert if error rate &gt;= 5%</span>
+        muted=<span class="hljs-literal">False</span>
+    ),
+    query_id=<span class="hljs-string">&quot;&lt;your-query-id&gt;&quot;</span>,  <span class="hljs-comment"># Query that calculates error rate</span>
+    rearm=<span class="hljs-number">3600</span>  <span class="hljs-comment"># Rearm after 1 hour</span>
+)
+</code></pre>
+<hr>
+<h2 id="security--access-control">Security &amp; Access Control</h2>
+<h3 id="step-1-set-up-unity-catalog-permissions">Step 1: Set Up Unity Catalog Permissions</h3>
+<pre><code class="language-sql"><span class="hljs-comment">-- Grant appropriate permissions to user groups</span>
+
+<span class="hljs-comment">-- Data Engineers: Full access to staging and main schemas</span>
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">ALL</span> PRIVILEGES <span class="hljs-keyword">ON</span> SCHEMA cookidoo_agent.staging <span class="hljs-keyword">TO</span> `data_engineers`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">ALL</span> PRIVILEGES <span class="hljs-keyword">ON</span> SCHEMA cookidoo_agent.main <span class="hljs-keyword">TO</span> `data_engineers`;
+
+<span class="hljs-comment">-- ML Engineers: Access to ML schema and model serving</span>
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">ALL</span> PRIVILEGES <span class="hljs-keyword">ON</span> SCHEMA cookidoo_agent.ml <span class="hljs-keyword">TO</span> `ml_engineers`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">ON</span> SCHEMA cookidoo_agent.main <span class="hljs-keyword">TO</span> `ml_engineers`;
+
+<span class="hljs-comment">-- Analysts: Read access to main and analytics schemas</span>
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">ON</span> SCHEMA cookidoo_agent.main <span class="hljs-keyword">TO</span> `analysts`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">ON</span> SCHEMA cookidoo_agent.analytics <span class="hljs-keyword">TO</span> `analysts`;
+
+<span class="hljs-comment">-- Application service principal: Limited access for production app</span>
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">ON</span> <span class="hljs-keyword">TABLE</span> cookidoo_agent.main.recipes_gold <span class="hljs-keyword">TO</span> `cookidoo_app_service_principal`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">ON</span> <span class="hljs-keyword">TABLE</span> cookidoo_agent.main.user_interactions <span class="hljs-keyword">TO</span> `cookidoo_app_service_principal`;
+<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">ON</span> <span class="hljs-keyword">TABLE</span> cookidoo_agent.main.recipe_modifications <span class="hljs-keyword">TO</span> `cookidoo_app_service_principal`;
+</code></pre>
+<h3 id="step-2-configure-secret-scopes">Step 2: Configure Secret Scopes</h3>
+<pre><code class="language-powershell"><span class="hljs-comment"># Create secret scope backed by Azure Key Vault</span>
+databricks secrets create<span class="hljs-literal">-scope</span> <span class="hljs-literal">--scope</span> cookidoo<span class="hljs-literal">-production</span> <span class="hljs-literal">--scope-backend-type</span> AZURE_KEYVAULT `
+    <span class="hljs-literal">--resource-id</span> /subscriptions/{subscription<span class="hljs-literal">-id</span>}/resourceGroups/{rg}/providers/Microsoft.KeyVault/vaults/{vault<span class="hljs-literal">-name</span>} `
+    <span class="hljs-literal">--dns-name</span> https://{vault<span class="hljs-literal">-name</span>}.vault.azure.net/
+
+<span class="hljs-comment"># Grant access to service principals</span>
+databricks secrets put<span class="hljs-literal">-acl</span> <span class="hljs-literal">--scope</span> cookidoo<span class="hljs-literal">-production</span> <span class="hljs-literal">--principal</span> cookidoo_app_service_principal <span class="hljs-literal">--permission</span> READ
+</code></pre>
+<hr>
+<h2 id="deployment-checklist">Deployment Checklist</h2>
+<p>Use this checklist to ensure complete deployment:</p>
+<h3 id="pre-deployment">Pre-Deployment</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Databricks workspace provisioned with Unity Catalog</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Azure Key Vault created and configured</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Service principals created for application access</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Databricks CLI configured locally</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> All required permissions granted</li>
+</ul>
+<h3 id="catalog--schema">Catalog &amp; Schema</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Unity Catalog <code>cookidoo_agent</code> created</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Schemas created: main, staging, analytics, ml</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Core tables created with proper constraints</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Indexes created for performance</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Permissions configured correctly</li>
+</ul>
+<h3 id="delta-live-tables">Delta Live Tables</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> DLT pipeline configuration files created</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> DLT notebooks deployed to workspace</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Pipelines created and validated</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Initial pipeline runs successful</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Data quality expectations passing</li>
+</ul>
+<h3 id="vector-search">Vector Search</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Vector search endpoint created and online</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Recipe embeddings index created</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Initial embedding sync completed</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Query performance validated</li>
+</ul>
+<h3 id="model-serving">Model Serving</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Claude Sonnet 4.5 endpoint deployed (primary)</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Claude Opus 4.1 endpoint deployed (analytics)</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Endpoints tested and responding</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Auto-capture configured for inference logs</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Rate limiting configured</li>
+</ul>
+<h3 id="agentbricks">AgentBricks</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> AgentBricks library installed on clusters</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Recipe modification agent deployed</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Q&amp;A agent deployed</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Shopping list agent deployed</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Agents registered in MLflow</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Agent workflows tested</li>
+</ul>
+<h3 id="mcp-integration">MCP Integration</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Secret scope created for MCP credentials</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> MCP server URL and credentials stored</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Integration functions deployed</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Sync job scheduled</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Initial sync completed successfully</li>
+</ul>
+<h3 id="genie-space">Genie Space</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Genie space created</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Domain instructions configured</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Sample queries saved</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Access permissions granted</li>
+</ul>
+<h3 id="notebooks">Notebooks</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> All notebooks imported to workspace</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Analytics dashboards functional</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Setup notebooks documented</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Notebook permissions configured</li>
+</ul>
+<h3 id="monitoring--alerts">Monitoring &amp; Alerts</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Monitoring queries created</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Dashboards configured</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Alerts set up for critical metrics</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Log aggregation working</li>
+</ul>
+<h3 id="security">Security</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> All secrets stored in Key Vault/secret scopes</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Row-level security configured (if needed)</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Audit logging enabled</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Access policies reviewed and approved</li>
+</ul>
+<h3 id="documentation">Documentation</h3>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> This deployment guide completed</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Architecture diagrams created</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Runbooks for common operations</li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox"> Disaster recovery plan documented</li>
+</ul>
+<hr>
+<h2 id="conclusion">Conclusion</h2>
+<p>This guide has walked through the complete Databricks setup for the Cookidoo Agent Assistant. Key achievements:</p>
+<ul>
+<li><strong>Structured data platform</strong> with Unity Catalog, schemas, and Delta tables</li>
+<li><strong>Automated data pipelines</strong> using Delta Live Tables for data quality</li>
+<li><strong>Semantic search capabilities</strong> with vector search indexes</li>
+<li><strong>Production LLM serving</strong> with Claude Sonnet 4.5 and Opus 4.1</li>
+<li><strong>Intelligent orchestration</strong> using AgentBricks workflows</li>
+<li><strong>External integration</strong> with Cookidoo API via MCP server</li>
+<li><strong>Analytics interface</strong> through Genie Space</li>
+<li><strong>Operational notebooks</strong> for analysis and monitoring</li>
+</ul>
+<p>The platform is now ready for the backend application to connect and serve users with intelligent recipe assistance.</p>
+<p>For questions or issues, refer to:</p>
+<ul>
+<li>Databricks documentation: <a href="https://docs.databricks.com">https://docs.databricks.com</a></li>
+<li>Project repository: <a href="https://github.com/yourusername/cookidoo-agent">https://github.com/yourusername/cookidoo-agent</a></li>
+<li>Support: <a href="mailto:data-platform@company.com">data-platform@company.com</a></li>
+</ul>
+
+            
+            
+        </body>
+        </html>

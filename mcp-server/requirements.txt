@@ -1,0 +1,14 @@
+# MCP Server Requirements
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+httpx==0.25.2
+pydantic==2.5.0
+python-dotenv==1.0.0
+
+# Cookidoo API Integration
+# Based on: https://github.com/alexandrepa/mcp-cookidoo
+cookidoo-api>=0.5.0
+
+# MCP Protocol Support (SSE transport for Databricks AI agents)
+fastmcp>=0.1.0
+mcp>=1.0.0

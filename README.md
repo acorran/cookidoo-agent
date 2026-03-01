@@ -1,10 +1,86 @@
-# Cookidoo LLM Assistant
+# Cookidoo Agent Assistant
 
 An AI-powered platform that enhances the Cookidoo cooking experience by enabling recipe customization, intelligent cooking assistance, and automated shopping list generation.
 
+## 🎉 Project Status: Core Infrastructure Complete!
+
+All foundational components have been created and are ready for deployment and feature implementation.
+
+📖 **See [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) for complete project structure and detailed setup guide.**
+
+## ⚠️ Prerequisites
+
+**Before starting**, ensure you have installed:
+- Python 3.11+
+- Node.js 16+ (includes npm)
+- Docker Desktop
+
+📋 **[PREREQUISITES.md](PREREQUISITES.md)** - Complete installation guide for Windows
+
+## 🚀 Quick Start
+
+### Deploy to Azure (Recommended)
+
+Deploy everything to Azure with a single command using [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/):
+
+```powershell
+# Install azd (one-time)
+winget install Microsoft.Azd
+
+# Authenticate
+azd auth login
+
+# Set Cookidoo credentials
+azd env new dev
+azd env set COOKIDOO_EMAIL "your@email.com"
+azd env set COOKIDOO_PASSWORD "yourpassword"
+
+# Deploy everything (infra + build + deploy)
+azd up
+```
+
+📖 **[docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md)** - Full deployment guide with prerequisites, architecture, and troubleshooting
+
+### Local Docker Setup
+
+```powershell
+# Build and start all services
+docker-compose up --build
+
+# Access the application
+# Frontend:   http://localhost:3000
+# Backend:    http://localhost:8000/docs
+# MCP Server: http://localhost:8001 (REST) + :8002 (MCP SSE)
+```
+
+### Automated Local Setup
+
+```powershell
+# Backend
+cd backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env  # Edit with your config
+uvicorn main:app --reload --port 8000
+
+# Frontend (new terminal)
+cd frontend
+npm install
+cp .env.example .env
+npm start
+
+# MCP Server (new terminal)
+cd mcp-server
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn server:app --reload --port 8001
+```
+
 ## Overview
 
-The Cookidoo LLM Assistant addresses the limitations of the Cookidoo platform by providing users with the ability to:
+The Cookidoo Agent Assistant addresses the limitations of the Cookidoo platform by providing users with the ability to:
 - Modify and personalize existing recipes
 - Generate new recipe variations based on dietary needs and preferences
 - Save customized recipes to "My Cookidoo Recipes"
@@ -113,8 +189,8 @@ The Cookidoo LLM Assistant addresses the limitations of the Cookidoo platform by
 ### 1. Clone the Repository
 
 ```powershell
-git clone https://github.com/yourusername/cookidoo-llm.git
-cd cookidoo-llm
+git clone https://github.com/yourusername/cookidoo-agent.git
+cd cookidoo-agent
 ```
 
 ### 2. Set Up Python Environment
@@ -164,12 +240,12 @@ Store sensitive credentials in Azure Key Vault:
 az login
 
 # Create Key Vault (if not exists)
-az keyvault create --name cookidoo-llm-kv --resource-group your-rg --location eastus
+az keyvault create --name cookidoo-agent-kv --resource-group your-rg --location eastus
 
 # Store secrets
-az keyvault secret set --vault-name cookidoo-llm-kv --name "cookidoo-username" --value "your-username"
-az keyvault secret set --vault-name cookidoo-llm-kv --name "cookidoo-password" --value "your-password"
-az keyvault secret set --vault-name cookidoo-llm-kv --name "llm-api-key" --value "your-api-key"
+az keyvault secret set --vault-name cookidoo-agent-kv --name "cookidoo-username" --value "your-username"
+az keyvault secret set --vault-name cookidoo-agent-kv --name "cookidoo-password" --value "your-password"
+az keyvault secret set --vault-name cookidoo-agent-kv --name "llm-api-key" --value "your-api-key"
 ```
 
 ### 5. Initialize Databricks
@@ -209,7 +285,7 @@ Access the application at `http://localhost:3000`
 ## Project Structure
 
 ```
-cookidoo-llm/
+cookidoo-agent/
 ├── backend/                 # FastAPI/Flask backend
 │   ├── api/                # API endpoints
 │   ├── agents/             # AgentBricks LLM agents
@@ -315,7 +391,7 @@ Once the backend is running, access the interactive API documentation:
 docker-compose build
 
 # Build specific service
-docker build -f docker/backend.Dockerfile -t cookidoo-llm-backend .
+docker build -f docker/backend.Dockerfile -t cookidoo-agent-backend .
 ```
 
 ### Azure Container Apps Deployment
@@ -325,16 +401,16 @@ docker build -f docker/backend.Dockerfile -t cookidoo-llm-backend .
 az login
 
 # Create resource group
-az group create --name cookidoo-llm-rg --location eastus
+az group create --name cookidoo-agent-rg --location eastus
 
 # Create container app environment
-az containerapp env create --name cookidoo-llm-env --resource-group cookidoo-llm-rg --location eastus
+az containerapp env create --name cookidoo-agent-env --resource-group cookidoo-agent-rg --location eastus
 
 # Deploy backend
 az containerapp create \
   --name cookidoo-backend \
-  --resource-group cookidoo-llm-rg \
-  --environment cookidoo-llm-env \
+  --resource-group cookidoo-agent-rg \
+  --environment cookidoo-agent-env \
   --image your-registry.azurecr.io/cookidoo-backend:latest \
   --target-port 8000 \
   --ingress external
@@ -342,8 +418,8 @@ az containerapp create \
 # Deploy frontend
 az containerapp create \
   --name cookidoo-frontend \
-  --resource-group cookidoo-llm-rg \
-  --environment cookidoo-llm-env \
+  --resource-group cookidoo-agent-rg \
+  --environment cookidoo-agent-env \
   --image your-registry.azurecr.io/cookidoo-frontend:latest \
   --target-port 3000 \
   --ingress external
@@ -371,8 +447,8 @@ Edit `databricks/config/dlt_config.json`:
 
 ```json
 {
-  "name": "cookidoo-llm-pipeline",
-  "storage": "/mnt/cookidoo-llm",
+  "name": "cookidoo-agent-pipeline",
+  "storage": "/mnt/cookidoo-agent",
   "target": "cookidoo_prod",
   "continuous": false
 }
@@ -389,7 +465,7 @@ Logs are stored in structured format:
 docker-compose logs -f backend
 
 # View logs (Azure)
-az containerapp logs show --name cookidoo-backend --resource-group cookidoo-llm-rg --follow
+az containerapp logs show --name cookidoo-backend --resource-group cookidoo-agent-rg --follow
 ```
 
 ### Databricks Dashboards
@@ -407,7 +483,7 @@ Access analytics dashboards in Databricks workspace:
 #### Cookidoo API Authentication Fails
 ```powershell
 # Verify credentials in Key Vault
-az keyvault secret show --vault-name cookidoo-llm-kv --name "cookidoo-username"
+az keyvault secret show --vault-name cookidoo-agent-kv --name "cookidoo-username"
 
 # Test MCP server connection
 python scripts/test_cookidoo_connection.py
@@ -416,7 +492,7 @@ python scripts/test_cookidoo_connection.py
 #### LLM Agent Not Responding
 ```powershell
 # Check LLM API key
-az keyvault secret show --vault-name cookidoo-llm-kv --name "llm-api-key"
+az keyvault secret show --vault-name cookidoo-agent-kv --name "llm-api-key"
 
 # Review agent logs
 docker-compose logs backend | grep "agent"
@@ -472,8 +548,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/cookidoo-llm/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/cookidoo-llm/discussions)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/cookidoo-agent/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/cookidoo-agent/discussions)
 
 ## Acknowledgments
 
