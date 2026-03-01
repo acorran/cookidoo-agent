@@ -1,23 +1,26 @@
 # Cookidoo Agent Assistant
 
-An AI-powered platform that enhances the Cookidoo cooking experience by enabling recipe customization, intelligent cooking assistance, and automated shopping list generation.
+An AI-powered platform that enhances the Cookidoo cooking experience by enabling recipe customization, intelligent cooking assistance, and automated shopping list generation — built with Databricks, MCP, and Azure.
 
-## 🎉 Project Status: Core Infrastructure Complete!
+## Project Status: Core Infrastructure Complete
 
 All foundational components have been created and are ready for deployment and feature implementation.
 
-📖 **See [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) for complete project structure and detailed setup guide.**
+- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** — Complete project structure and detailed setup guide
+- **[docs/PRD.md](docs/PRD.md)** — Product Requirements Document
 
-## ⚠️ Prerequisites
+## Prerequisites
 
-**Before starting**, ensure you have installed:
-- Python 3.11+
-- Node.js 16+ (includes npm)
-- Docker Desktop
+Before starting, ensure you have installed:
 
-📋 **[PREREQUISITES.md](PREREQUISITES.md)** - Complete installation guide for Windows
+- **Python 3.11+**
+- **Node.js 16+** (includes npm)
+- **Docker Desktop**
+- **Azure Developer CLI (`azd`)** — for cloud deployment
 
-## 🚀 Quick Start
+See **[PREREQUISITES.md](PREREQUISITES.md)** for the complete installation guide on Windows.
+
+## Quick Start
 
 ### Deploy to Azure (Recommended)
 
@@ -26,6 +29,10 @@ Deploy everything to Azure with a single command using [Azure Developer CLI](htt
 ```powershell
 # Install azd (one-time)
 winget install Microsoft.Azd
+
+# Clone and enter the project
+git clone https://github.com/acorran/cookidoo-agent.git
+cd cookidoo-agent
 
 # Authenticate
 azd auth login
@@ -39,7 +46,7 @@ azd env set COOKIDOO_PASSWORD "yourpassword"
 azd up
 ```
 
-📖 **[docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md)** - Full deployment guide with prerequisites, architecture, and troubleshooting
+See **[docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md)** for the full guide with architecture, prerequisites, and troubleshooting.
 
 ### Local Docker Setup
 
@@ -53,7 +60,7 @@ docker-compose up --build
 # MCP Server: http://localhost:8001 (REST) + :8002 (MCP SSE)
 ```
 
-### Automated Local Setup
+### Manual Local Setup
 
 ```powershell
 # Backend
@@ -67,7 +74,6 @@ uvicorn main:app --reload --port 8000
 # Frontend (new terminal)
 cd frontend
 npm install
-cp .env.example .env
 npm start
 
 # MCP Server (new terminal)
@@ -78,272 +84,204 @@ pip install -r requirements.txt
 uvicorn server:app --reload --port 8001
 ```
 
-## Overview
-
-The Cookidoo Agent Assistant addresses the limitations of the Cookidoo platform by providing users with the ability to:
-- Modify and personalize existing recipes
-- Generate new recipe variations based on dietary needs and preferences
-- Save customized recipes to "My Cookidoo Recipes"
-- Get intelligent answers about cooking techniques and ingredients
-- Generate automated shopping lists from selected recipes
-
 ## Features
 
-### 🍳 Recipe Modification
+### Recipe Modification
 - Adapt recipes to dietary restrictions (gluten-free, vegan, etc.)
 - Adjust serving sizes automatically
 - Substitute ingredients with intelligent recommendations
-- Save personalized variations to your Cookidoo account
+- Save personalised variations to your Cookidoo account
 
-### 🤖 Intelligent Cooking Assistant
+### Intelligent Cooking Assistant
 - Ask questions about ingredients and cooking techniques
 - Get recipe recommendations based on preferences
 - Receive cooking tips and best practices
 - Learn about ingredient substitutions
 
-### 🛒 Smart Shopping Lists
+### Smart Shopping Lists
 - Generate consolidated shopping lists from multiple recipes
-- Organize ingredients by category for efficient shopping
+- Organise ingredients by category for efficient shopping
 - Automatically calculate quantities for adjusted serving sizes
-- Export lists in various formats
 
-### 📊 Data Analytics
-- Track your cooking patterns and preferences
-- Analyze recipe modifications and trends
-- Visualize user interactions through Databricks notebooks
+### Data Analytics (Databricks)
+- Track cooking patterns and preferences
+- Analyse recipe modifications and trends
+- Visualise user interactions through Databricks notebooks
 - Continuous improvement through usage insights
 
 ## Architecture
 
 ```
 ┌─────────────────┐
-│   React Web UI │
+│   React Web UI  │  (frontend/)
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  FastAPI/Flask  │
+│    FastAPI       │  (backend/)
 │   Backend API   │
 └────────┬────────┘
          │
-         ▼
-┌─────────────────┐
-│  AgentBricks    │
-│  LLM Agent      │
-└────┬────────────┘
-     │
-     ├──────────────┐
-     │              │
-     ▼              ▼
+    ┌────┴────────────┐
+    │                 │
+    ▼                 ▼
 ┌─────────┐   ┌──────────────┐
 │   MCP   │   │  Databricks  │
-│ Server  │   │ Delta Tables │
+│ Server  │   │ Unity Catalog│
+│(mcp-    │   │ Delta Tables │
+│ server/)│   │ AI Agents    │
 └────┬────┘   └──────────────┘
      │
      ▼
 ┌─────────────────┐
 │  Cookidoo API   │
+│ (cookidoo-api)  │
 └─────────────────┘
 ```
 
 ## Tech Stack
 
-### Frontend
-- **Framework**: React
-- **UI Components**: Modern React component library
-- **State Management**: React Context / Redux
-
-### Backend
-- **Framework**: FastAPI or Flask
-- **LLM Orchestration**: AgentBricks
-- **API Integration**: MCP (Model Context Protocol) Server
-- **Language**: Python 3.9+
-
-### Data & Analytics
-- **Platform**: Databricks
-- **Storage**: Delta Live Tables (DLT)
-- **Notebooks**: Interactive data exploration and visualization
-
-### Infrastructure
-- **Containerization**: Docker
-- **Cloud Platform**: Microsoft Azure
-- **Deployment**: Azure Container Apps
-- **Secrets Management**: Azure Key Vault
-
-### Security
-- **Credential Storage**: Azure Key Vault
-- **Authentication**: Token-based auth
-- **HTTPS/TLS**: Secure data transmission
-
-## Prerequisites
-
-- Python 3.9 or higher
-- Node.js 16+ and npm/yarn
-- Docker and Docker Compose
-- Azure account with Key Vault access
-- Databricks workspace
-- Cookidoo account credentials
-
-## Getting Started
-
-### 1. Clone the Repository
-
-```powershell
-git clone https://github.com/yourusername/cookidoo-agent.git
-cd cookidoo-agent
-```
-
-### 2. Set Up Python Environment
-
-```powershell
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-.\venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 3. Configure Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-# Azure Key Vault
-AZURE_KEY_VAULT_URL=https://your-keyvault.vault.azure.net/
-
-# Cookidoo Credentials (stored in Key Vault)
-COOKIDOO_USERNAME=your-username
-COOKIDOO_PASSWORD=your-password
-
-# LLM Configuration
-LLM_MODEL=gpt-4
-LLM_API_KEY=your-api-key
-
-# Databricks
-DATABRICKS_HOST=https://your-databricks-instance.cloud.databricks.com
-DATABRICKS_TOKEN=your-databricks-token
-
-# API Configuration
-API_PORT=8000
-API_HOST=0.0.0.0
-```
-
-### 4. Set Up Azure Key Vault
-
-Store sensitive credentials in Azure Key Vault:
-
-```powershell
-# Login to Azure
-az login
-
-# Create Key Vault (if not exists)
-az keyvault create --name cookidoo-agent-kv --resource-group your-rg --location eastus
-
-# Store secrets
-az keyvault secret set --vault-name cookidoo-agent-kv --name "cookidoo-username" --value "your-username"
-az keyvault secret set --vault-name cookidoo-agent-kv --name "cookidoo-password" --value "your-password"
-az keyvault secret set --vault-name cookidoo-agent-kv --name "llm-api-key" --value "your-api-key"
-```
-
-### 5. Initialize Databricks
-
-```powershell
-# Run setup scripts
-python scripts/setup_databricks.py
-
-# Deploy DLT pipelines
-python scripts/deploy_dlt.py
-```
-
-### 6. Run the Application
-
-#### Option A: Local Development
-
-```powershell
-# Start backend
-cd backend
-uvicorn main:app --reload --port 8000
-
-# In a new terminal, start frontend
-cd frontend
-npm install
-npm start
-```
-
-#### Option B: Docker Compose
-
-```powershell
-# Build and run all services
-docker-compose up --build
-```
-
-Access the application at `http://localhost:3000`
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React, TypeScript |
+| **Backend** | FastAPI, Python 3.11+ |
+| **MCP Server** | FastMCP, cookidoo-api |
+| **LLM** | Claude Sonnet 4.5 (via Databricks Model Serving) |
+| **Data Platform** | Databricks Unity Catalog, Delta Live Tables |
+| **AI Agents** | Databricks Mosaic AI Agent Framework, UC Functions |
+| **Infrastructure** | Azure Container Apps, Bicep (IaC) |
+| **Secrets** | Azure Key Vault |
+| **Containerisation** | Docker, Docker Compose |
+| **Deployment** | Azure Developer CLI (`azd up`) |
 
 ## Project Structure
 
 ```
 cookidoo-agent/
-├── backend/                 # FastAPI/Flask backend
-│   ├── api/                # API endpoints
-│   ├── agents/             # AgentBricks LLM agents
-│   ├── services/           # Business logic services
-│   ├── models/             # Data models
-│   ├── utils/              # Utility functions
-│   └── main.py             # Application entry point
-├── frontend/               # React frontend
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── pages/         # Page components
-│   │   ├── services/      # API service clients
-│   │   └── utils/         # Frontend utilities
-│   └── public/
-├── mcp-server/            # Model Context Protocol server
-│   ├── cookidoo/          # Cookidoo API integration
-│   └── server.py          # MCP server implementation
-├── databricks/            # Databricks notebooks and configs
-│   ├── notebooks/         # Analysis notebooks
-│   ├── dlt/               # Delta Live Tables pipelines
-│   └── scripts/           # Setup and utility scripts
-├── docker/                # Docker configurations
+├── azure.yaml                    # azd deployment configuration
+├── docker-compose.yml            # Local multi-container setup
+├── setup.ps1                     # Automated local setup script
+├── verify-prerequisites.ps1      # Check all tools are installed
+│
+├── backend/                      # FastAPI backend
+│   ├── main.py                   # Application entry point
+│   ├── requirements.txt
+│   ├── .env.example
+│   ├── api/                      # API route handlers
+│   │   ├── chat.py
+│   │   ├── health.py
+│   │   ├── recipes.py
+│   │   └── shopping.py
+│   ├── config/                   # Settings & configuration
+│   │   └── settings.py
+│   ├── models/                   # Pydantic data models
+│   ├── services/                 # Business logic
+│   │   ├── chat_service.py
+│   │   ├── recipe_service.py
+│   │   └── shopping_service.py
+│   └── utils/                    # Helpers (Key Vault, logging)
+│       ├── azure_key_vault.py
+│       ├── dependencies.py
+│       └── logging_config.py
+│
+├── frontend/                     # React frontend
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── public/
+│   └── src/
+│       ├── App.tsx
+│       ├── components/           # Layout, shared components
+│       ├── pages/                # Chat, Recipes, Shopping, Home
+│       ├── services/api.ts       # Backend API client
+│       └── types/                # TypeScript interfaces
+│
+├── mcp-server/                   # Model Context Protocol server
+│   ├── server.py                 # MCP server (REST + SSE)
+│   ├── mcp_tools.py              # Cookidoo tool definitions
+│   ├── requirements.txt
+│   └── .env.template
+│
+├── databricks/                   # Databricks notebooks & scripts
+│   ├── notebooks/                # Jupyter notebooks (.ipynb)
+│   │   ├── 00_test_cookidoo_connection.ipynb
+│   │   ├── 01_setup_catalog_and_schemas.ipynb
+│   │   ├── 02_dlt_pipeline.ipynb
+│   │   ├── 03_mcp_client_integration.ipynb
+│   │   ├── 04_uc_functions_mcp_tools.ipynb
+│   │   └── 05_mcp_sync_recipes.ipynb
+│   └── scripts/                  # Automation scripts
+│       ├── deploy_infrastructure.py
+│       ├── deploy_mcp_sync_job.py
+│       └── generate_sample_data.py
+│
+├── infra/                        # Azure infrastructure (Bicep)
+│   ├── main.bicep                # Main template
+│   ├── main.parameters.json
+│   └── modules/                  # Container Apps, ACR, Key Vault, etc.
+│
+├── docker/                       # Dockerfiles & nginx config
 │   ├── backend.Dockerfile
 │   ├── frontend.Dockerfile
-│   └── mcp.Dockerfile
-├── tests/                 # Test suites
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
-├── docs/                  # Documentation
-│   ├── api/              # API documentation
-│   ├── deployment/       # Deployment guides
-│   └── architecture/     # Architecture diagrams
-├── scripts/              # Utility scripts
-├── .env.example          # Example environment variables
-├── docker-compose.yml    # Docker Compose configuration
-├── requirements.txt      # Python dependencies
-├── PRD.md               # Product Requirements Document
-└── README.md            # This file
+│   ├── mcp.Dockerfile
+│   └── nginx.conf
+│
+├── tests/                        # Test suites
+│   ├── conftest.py
+│   ├── requirements.txt
+│   ├── test_api_endpoints.py
+│   └── test_recipe_service.py
+│
+├── docs/                         # Documentation
+│   ├── PRD.md                    # Product Requirements Document
+│   ├── AZURE_DEPLOYMENT.md       # Azure deployment guide
+│   ├── DATABRICKS_DEPLOYMENT.md  # Databricks setup guide
+│   └── COOKIDOO_MCP_INTEGRATION.md
+│
+└── scripts/                      # Deployment scripts
+    └── deploy_azure_infrastructure.py
+```
+
+## Databricks Setup
+
+The project includes 6 Jupyter notebooks for Databricks, run them in order:
+
+1. **`00_test_cookidoo_connection`** — Verify Cookidoo API credentials via Key Vault
+2. **`01_setup_catalog_and_schemas`** — Create Unity Catalog, schemas, and tables
+3. **`02_dlt_pipeline`** — Delta Live Tables: Bronze → Silver → Gold
+4. **`03_mcp_client_integration`** — Connect to MCP server (REST + SSE patterns)
+5. **`04_uc_functions_mcp_tools`** — Register UC Functions as AI agent tools
+6. **`05_mcp_sync_recipes`** — Scheduled recipe sync job
+
+See **[docs/DATABRICKS_DEPLOYMENT.md](docs/DATABRICKS_DEPLOYMENT.md)** for the complete guide.
+
+## API Documentation
+
+Once the backend is running, access the interactive API documentation:
+
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+
+### Key Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/health` | Health check |
+| `POST` | `/api/chat` | Chat with the cooking assistant |
+| `GET` | `/api/recipes/search` | Search recipes |
+| `GET` | `/api/recipes/{id}` | Get recipe details |
+| `POST` | `/api/recipes/modify` | Modify an existing recipe |
+| `POST` | `/api/recipes/save` | Save recipe to Cookidoo |
+| `POST` | `/api/shopping-list` | Generate shopping list |
+
+## Running Tests
+
+```powershell
+cd tests
+pip install -r requirements.txt
+pytest -v --cov=backend
 ```
 
 ## Development
-
-### Running Tests
-
-```powershell
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=backend --cov-report=html
-
-# Run specific test suite
-pytest tests/unit
-pytest tests/integration
-```
-
-### Code Quality
 
 ```powershell
 # Format code
@@ -356,160 +294,77 @@ flake8 backend/ tests/
 mypy backend/
 ```
 
-### Pre-commit Hooks
+## Environment Variables
 
-```powershell
-# Install pre-commit hooks
-pre-commit install
+The backend uses pydantic-settings. Create `backend/.env` from `backend/.env.example`:
 
-# Run manually
-pre-commit run --all-files
+```env
+# Azure Key Vault
+AZURE_KEY_VAULT_URL=https://your-keyvault.vault.azure.net/
+
+# MCP Server
+MCP_SERVER_URL=http://localhost:8001
+MCP_SSE_URL=http://localhost:8002
+
+# LLM Configuration
+LLM_MODEL=claude-sonnet-4-5-20250514
+LLM_TEMPERATURE=0.7
+LLM_MAX_TOKENS=4096
+
+# Databricks (optional, for direct integration)
+DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
+DATABRICKS_TOKEN=your-token
 ```
 
-## API Documentation
-
-Once the backend is running, access the interactive API documentation:
-
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
-
-### Key Endpoints
-
-- `POST /api/v1/recipes/modify` - Modify an existing recipe
-- `POST /api/v1/recipes/generate` - Generate a new recipe variation
-- `POST /api/v1/recipes/save` - Save recipe to Cookidoo
-- `GET /api/v1/recipes/{id}` - Retrieve recipe details
-- `POST /api/v1/chat` - Chat with the cooking assistant
-- `POST /api/v1/shopping-list` - Generate shopping list
+Sensitive credentials (Cookidoo email/password, API keys) should be stored in **Azure Key Vault**, not in `.env` files. See [docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md) for Key Vault setup.
 
 ## Deployment
 
-### Docker Build
+### Azure (Production)
 
 ```powershell
-# Build all images
-docker-compose build
-
-# Build specific service
-docker build -f docker/backend.Dockerfile -t cookidoo-agent-backend .
+azd up       # Provision + build + deploy
+azd deploy   # Redeploy code only (after infra is up)
+azd down     # Tear down all resources
 ```
 
-### Azure Container Apps Deployment
+See **[docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md)** for the complete guide.
+
+### Docker (Local)
 
 ```powershell
-# Login to Azure
-az login
-
-# Create resource group
-az group create --name cookidoo-agent-rg --location eastus
-
-# Create container app environment
-az containerapp env create --name cookidoo-agent-env --resource-group cookidoo-agent-rg --location eastus
-
-# Deploy backend
-az containerapp create \
-  --name cookidoo-backend \
-  --resource-group cookidoo-agent-rg \
-  --environment cookidoo-agent-env \
-  --image your-registry.azurecr.io/cookidoo-backend:latest \
-  --target-port 8000 \
-  --ingress external
-
-# Deploy frontend
-az containerapp create \
-  --name cookidoo-frontend \
-  --resource-group cookidoo-agent-rg \
-  --environment cookidoo-agent-env \
-  --image your-registry.azurecr.io/cookidoo-frontend:latest \
-  --target-port 3000 \
-  --ingress external
-```
-
-## Configuration
-
-### LLM Model Configuration
-
-Edit `backend/config/llm_config.yaml`:
-
-```yaml
-llm:
-  model: gpt-4
-  temperature: 0.7
-  max_tokens: 2000
-  system_prompt: |
-    You are an expert cooking assistant with deep knowledge of recipes,
-    ingredients, and cooking techniques.
-```
-
-### Databricks Configuration
-
-Edit `databricks/config/dlt_config.json`:
-
-```json
-{
-  "name": "cookidoo-agent-pipeline",
-  "storage": "/mnt/cookidoo-agent",
-  "target": "cookidoo_prod",
-  "continuous": false
-}
+docker-compose up --build        # Start all services
+docker-compose down              # Stop all services
+docker-compose logs -f backend   # View backend logs
 ```
 
 ## Monitoring & Logging
 
-### Application Logs
+- **Application logs**: Structured JSON logging via Python `logging` module
+- **Azure**: `az containerapp logs show --name cookidoo-backend --resource-group <rg> --follow`
+- **Docker**: `docker-compose logs -f backend`
+- **Databricks**: Analytics dashboards via notebooks in `databricks/notebooks/`
 
-Logs are stored in structured format:
+## Documentation
 
-```powershell
-# View logs (Docker)
-docker-compose logs -f backend
+| Document | Description |
+|----------|-------------|
+| [PREREQUISITES.md](PREREQUISITES.md) | Tool installation guide |
+| [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) | Project overview and setup |
+| [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md) | Feature implementation tracker |
+| [docs/PRD.md](docs/PRD.md) | Product Requirements Document |
+| [docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md) | Azure deployment guide |
+| [docs/DATABRICKS_DEPLOYMENT.md](docs/DATABRICKS_DEPLOYMENT.md) | Databricks setup guide |
+| [docs/COOKIDOO_MCP_INTEGRATION.md](docs/COOKIDOO_MCP_INTEGRATION.md) | MCP + Cookidoo API integration |
 
-# View logs (Azure)
-az containerapp logs show --name cookidoo-backend --resource-group cookidoo-agent-rg --follow
-```
+## Security
 
-### Databricks Dashboards
-
-Access analytics dashboards in Databricks workspace:
-- Recipe modification trends
-- User interaction patterns
-- Agent performance metrics
-- Error rates and diagnostics
-
-## Troubleshooting
-
-### Common Issues
-
-#### Cookidoo API Authentication Fails
-```powershell
-# Verify credentials in Key Vault
-az keyvault secret show --vault-name cookidoo-agent-kv --name "cookidoo-username"
-
-# Test MCP server connection
-python scripts/test_cookidoo_connection.py
-```
-
-#### LLM Agent Not Responding
-```powershell
-# Check LLM API key
-az keyvault secret show --vault-name cookidoo-agent-kv --name "llm-api-key"
-
-# Review agent logs
-docker-compose logs backend | grep "agent"
-```
-
-#### Databricks Connection Issues
-```powershell
-# Verify Databricks token
-python scripts/test_databricks_connection.py
-
-# Check network connectivity
-Test-NetConnection your-databricks-instance.cloud.databricks.com -Port 443
-```
+- Never commit credentials or API keys — all secrets go in Azure Key Vault
+- `.gitignore` is configured to exclude `.env`, credentials, and secret files
+- HTTPS/TLS enforced in Azure Container Apps
+- Databricks secrets scopes backed by Azure Key Vault
 
 ## Contributing
-
-We welcome contributions! Please follow these guidelines:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -520,64 +375,17 @@ We welcome contributions! Please follow these guidelines:
 7. Push to the branch (`git push origin feature/amazing-feature`)
 8. Open a Pull Request
 
-### Code Review Process
-
-- All PRs require at least one approval
-- All tests must pass
-- Code coverage should not decrease
-- Follow the project's coding guidelines
-
-## Security
-
-### Reporting Security Issues
-
-Please report security vulnerabilities to security@example.com
-
-### Security Best Practices
-
-- Never commit credentials or API keys
-- Use Azure Key Vault for all secrets
-- Regularly update dependencies
-- Follow OWASP security guidelines
-- Enable Azure Security Center recommendations
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
-## Support
+## Links
 
-- **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/cookidoo-agent/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/cookidoo-agent/discussions)
-
-## Acknowledgments
-
-- Cookidoo API open-source community
-- AgentBricks framework contributors
-- Databricks team for platform support
-- Azure team for cloud infrastructure
-
-## Roadmap
-
-### Q1 2026
-- [ ] Mobile app development (iOS/Android)
-- [ ] Voice interface integration
-- [ ] Multi-language support
-- [ ] Enhanced recipe recommendation engine
-
-### Q2 2026
-- [ ] Meal planning calendar
-- [ ] Nutritional analysis integration
-- [ ] Social sharing features
-- [ ] Recipe rating and reviews
-
-### Q3 2026
-- [ ] Integration with other recipe platforms
-- [ ] Advanced AI training with user feedback
-- [ ] Grocery delivery service integration
-- [ ] Kitchen inventory management
+- **Repository**: [github.com/acorran/cookidoo-agent](https://github.com/acorran/cookidoo-agent)
+- **Issues**: [github.com/acorran/cookidoo-agent/issues](https://github.com/acorran/cookidoo-agent/issues)
+- **cookidoo-api**: [github.com/miaucl/cookidoo-api](https://github.com/miaucl/cookidoo-api)
+- **mcp-cookidoo**: [github.com/alexandrepa/mcp-cookidoo](https://github.com/alexandrepa/mcp-cookidoo)
 
 ---
 
-**Built with ❤️ for the cooking community**
+**Built with Azure, Databricks, and MCP for the cooking community**
