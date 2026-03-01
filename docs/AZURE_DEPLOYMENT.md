@@ -267,10 +267,10 @@ After deployment:
 1. **Test the frontend** — open the frontend URL and explore
 2. **Test the API** — open `{backend-url}/docs` for the Swagger UI
 3. **Set up Databricks** (if deployed) — run the notebooks in `databricks/notebooks/` in order:
-   - `00_test_cookidoo_connection.py` — verify MCP connectivity
-   - `01_setup_catalog_and_schemas.py` — create Unity Catalog objects
-   - `02_dlt_pipeline.py` — set up Delta Live Tables
-   - `03_mcp_client_integration.py` — test MCP client from Databricks
-   - `04_uc_functions_mcp_tools.py` — register tools in Unity Catalog
-   - `05_mcp_sync_recipes.py` — schedule recipe sync job
+   - `00_test_cookidoo_connection.ipynb` — verify MCP connectivity
+   - `01_setup_catalog_and_schemas.ipynb` — create Unity Catalog objects
+   - `02_dlt_pipeline.ipynb` — set up Delta Live Tables
+   - `03_mcp_client_integration.ipynb` — test MCP client from Databricks
+   - `04_uc_functions_mcp_tools.ipynb` — register tools in Unity Catalog
+   - `05_mcp_sync_recipes.ipynb` — schedule recipe sync job
 4. **Set up CI/CD** — run `azd pipeline config` to create a GitHub Actions workflow

@@ -9,7 +9,7 @@ This guide shows how to integrate the **mcp-cookidoo** library into the Cookidoo
 
 ## Quick Test
 
-A Databricks notebook has been created for testing: `databricks/notebooks/00_test_cookidoo_connection.py`
+A Databricks notebook has been created for testing: `databricks/notebooks/00_test_cookidoo_connection.ipynb`
 
 ### Prerequisites
 
@@ -20,7 +20,7 @@ A Databricks notebook has been created for testing: `databricks/notebooks/00_tes
 2. **Run the test notebook:**
    ```python
    # In Databricks, open and run:
-   # databricks/notebooks/00_test_cookidoo_connection.py
+   # databricks/notebooks/00_test_cookidoo_connection.ipynb
    
    # Set your Key Vault scope name in cell #3:
    KEY_VAULT_SCOPE = "cookidoo-secrets"  # Your scope name
@@ -358,7 +358,7 @@ Invoke-RestMethod -Uri "http://localhost:8001/recipes/search" `
 
 #### Test 4: Run Databricks Notebook
 
-In Databricks, run `databricks/notebooks/00_test_cookidoo_connection.py` to test connection with Key Vault credentials.
+In Databricks, run `databricks/notebooks/00_test_cookidoo_connection.ipynb` to test connection with Key Vault credentials.
 
 ### 6. Docker Integration
 
@@ -486,7 +486,7 @@ shopping_list = client.get_shopping_list()
 
 ## Next Steps
 
-1. ✅ Run Databricks test notebook: `00_test_cookidoo_connection.py`
+1. ✅ Run Databricks test notebook: `00_test_cookidoo_connection.ipynb`
 2. ⬜ Update `mcp-server/server.py` with code above
 3. ⬜ Update `mcp-server/requirements.txt`
 4. ⬜ Test MCP server locally
@@ -498,10 +498,10 @@ shopping_list = client.get_shopping_list()
 
 - **mcp-cookidoo**: https://github.com/alexandrepa/mcp-cookidoo
 - **cookidoo-api**: https://github.com/miaucl/cookidoo-api
-- **Test Notebook**: `databricks/notebooks/00_test_cookidoo_connection.py`
+- **Test Notebook**: `databricks/notebooks/00_test_cookidoo_connection.ipynb`
 - **Implementation Checklist**: `IMPLEMENTATION_CHECKLIST.md`
 
 ---
 
-**Last Updated**: November 28, 2025  
+**Last Updated**: March 1, 2026  
 **Status**: Test notebook created, integration guide complete

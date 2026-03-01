@@ -1,8 +1,8 @@
 # Databricks Deployment & Configuration Guide
 ## Cookidoo Agent Assistant
 
-**Version:** 1.0  
-**Last Updated:** November 28, 2025
+**Version:** 1.1  
+**Last Updated:** March 1, 2026
 
 ---
 
@@ -395,21 +395,11 @@ Save as `databricks/dlt/recipes_pipeline.json`:
 
 ### Step 2: Create DLT Notebook (Bronze → Silver → Gold)
 
-Save as notebook at `databricks/notebooks/dlt_recipes_bronze_silver_gold.ipynb`:
+The DLT pipeline notebook is provided as `databricks/notebooks/02_dlt_pipeline.ipynb`.
+
+Key sections of the pipeline code:
 
 ```python
-# Databricks notebook source
-import dlt
-from pydantic import ValidationError
-from datetime import datetime
-
-# COMMAND ----------
-# MAGIC %md
-# MAGIC # Recipes DLT Pipeline: Bronze → Silver → Gold
-# MAGIC
-# MAGIC This notebook defines the Delta Live Tables pipeline for recipe data processing.
-
-# COMMAND ----------
 # Bronze Layer: Raw data ingestion
 
 @dlt.table(
@@ -814,21 +804,18 @@ AgentBricks orchestrates complex multi-step workflows involving the LLM, MCP ser
 
 ### Step 2: Define Recipe Modification Agent
 
-Save as `databricks/notebooks/agent_recipe_modification.py`:
+Create as `databricks/notebooks/agent_recipe_modification.ipynb`:
 
 ```python
-# Databricks notebook source
 from agentbricks import Agent, Tool, Chain
 from databricks.sdk import WorkspaceClient
 import mlflow
 
-# COMMAND ----------
-
 # Initialize workspace client
 w = WorkspaceClient()
+```
 
-# COMMAND ----------
-
+```python
 # Define tools for the agent
 @Tool(name="get_recipe", description="Retrieve a recipe from Cookidoo by ID")
 def get_recipe(recipe_id: str) -> dict:
@@ -881,8 +868,9 @@ def save_recipe(recipe_data: dict) -> str:
     
     return recipe_data["recipe_id"]
 
-# COMMAND ----------
+```
 
+```python
 # Define the Recipe Modification Agent
 class RecipeModificationAgent(Agent):
     """Agent for modifying recipes based on user requirements."""
@@ -974,8 +962,9 @@ class RecipeModificationAgent(Agent):
             "cookidoo_agent.main.recipe_modifications"
         )
 
-# COMMAND ----------
+```
 
+```python
 # Register agent with MLflow
 agent = RecipeModificationAgent()
 
@@ -1266,28 +1255,22 @@ LIMIT 20;
 
 Deploy analytical and operational notebooks to the Databricks workspace.
 
-### Step 1: Create Notebooks Directory Structure
+### Step 1: Notebook Directory Structure
+
+All notebooks are provided in standard `.ipynb` (Jupyter) format for maximum portability:
 
 ```
-/Workspace/cookidoo-agent/
-├── databricks/
-│   ├── notebooks/
-│   │   ├── setup/
-│   │   │   ├── 01_initial_setup.py
-│   │   │   ├── 02_create_tables.sql
-│   │   │   └── 03_load_sample_data.py
-│   │   ├── dlt/
-│   │   │   ├── dlt_recipes_bronze_silver_gold.py
-│   │   │   └── dlt_interactions_pipeline.py
-│   │   ├── analytics/
-│   │   │   ├── recipe_analytics_dashboard.py
-│   │   │   ├── user_engagement_analysis.py
-│   │   │   └── modification_trends.py
-│   │   └── agents/
-│   │       ├── agent_recipe_modification.py
-│   │       ├── agent_qa.py
-│   │       └── agent_shopping_list.py
+databricks/notebooks/
+├── 00_test_cookidoo_connection.ipynb    # Test Cookidoo API connectivity
+├── 01_setup_catalog_and_schemas.ipynb   # Create Unity Catalog, schemas, tables
+├── 02_dlt_pipeline.ipynb                # Delta Live Tables: Bronze → Silver → Gold
+├── 03_mcp_client_integration.ipynb      # MCP server integration (REST + SSE)
+├── 04_uc_functions_mcp_tools.ipynb       # UC Functions as agent tools
+└── 05_mcp_sync_recipes.ipynb            # Scheduled recipe sync job
 ```
+
+> **Note:** These notebooks use `.ipynb` format, which Databricks imports natively.
+> They render with full markdown on GitHub and work in VS Code with the Jupyter extension.
 
 ### Step 2: Deploy Notebooks via CLI
 
@@ -1302,27 +1285,23 @@ databricks workspace import-dir `
 databricks workspace ls /Workspace/cookidoo-agent/databricks/notebooks
 ```
 
-### Step 3: Create Analytics Dashboard Notebook
+### Step 3: Recommended Execution Order
 
-Save as `databricks/notebooks/analytics/recipe_analytics_dashboard.py`:
+1. **00_test_cookidoo_connection** — Verify credentials and API connectivity
+2. **01_setup_catalog_and_schemas** — Create UC catalog, schemas, and tables
+3. **02_dlt_pipeline** — Deploy as a DLT pipeline (not run directly)
+4. **03_mcp_client_integration** — Test REST and MCP protocol patterns
+5. **04_uc_functions_mcp_tools** — Register UC functions for AI agents
+6. **05_mcp_sync_recipes** — Schedule as a Databricks Job for daily sync
+
+### Step 4: Analytics Dashboard (Optional)
+
+Create an analytics notebook in Databricks for dashboards:
 
 ```python
-# Databricks notebook source
-# MAGIC %md
-# MAGIC # Recipe Analytics Dashboard
-# MAGIC 
-# MAGIC Comprehensive analytics for recipe data and user engagement.
-
-# COMMAND ----------
 import plotly.express as px
 import plotly.graph_objects as go
 from pyspark.sql import functions as F
-
-# COMMAND ----------
-# MAGIC %md
-# MAGIC ## Recipe Overview Statistics
-
-# COMMAND ----------
 # Get recipe statistics
 stats_df = spark.table("cookidoo_agent.main.recipe_statistics")
 stats = stats_df.collect()[0]
@@ -1349,11 +1328,10 @@ displayHTML(f"""
 </div>
 """)
 
-# COMMAND ----------
-# MAGIC %md
-# MAGIC ## Recipe Distribution by Difficulty
+```
 
-# COMMAND ----------
+```python
+# Recipe Distribution by Difficulty
 difficulty_df = (
     spark.table("cookidoo_agent.main.recipes_gold")
     .groupBy("difficulty")
@@ -1369,11 +1347,10 @@ fig = px.pie(
 )
 fig.show()
 
-# COMMAND ----------
-# MAGIC %md
-# MAGIC ## Most Popular Recipe Tags
+```
 
-# COMMAND ----------
+```python
+# Most Popular Recipe Tags
 tags_df = (
     spark.table("cookidoo_agent.main.recipes_gold")
     .select(F.explode("tags").alias("tag"))
@@ -1394,11 +1371,10 @@ fig = px.bar(
 fig.update_layout(yaxis={'categoryorder':'total ascending'})
 fig.show()
 
-# COMMAND ----------
-# MAGIC %md
-# MAGIC ## User Engagement Trends (Last 30 Days)
+```
 
-# COMMAND ----------
+```python
+# User Engagement Trends (Last 30 Days)
 from datetime import datetime, timedelta
 
 thirty_days_ago = datetime.now() - timedelta(days=30)
@@ -1424,11 +1400,10 @@ fig = px.line(
 )
 fig.show()
 
-# COMMAND ----------
-# MAGIC %md
-# MAGIC ## Recipe Modification Analysis
+```
 
-# COMMAND ----------
+```python
+# Recipe Modification Analysis
 mod_trends_df = (
     spark.table("cookidoo_agent.main.recipe_modifications")
     .groupBy(F.date_trunc("day", "created_at").alias("date"))
@@ -1658,5 +1633,5 @@ The platform is now ready for the backend application to connect and serve users
 
 For questions or issues, refer to:
 - Databricks documentation: https://docs.databricks.com
-- Project repository: https://github.com/yourusername/cookidoo-agent
+- Project repository: https://github.com/acorran/cookidoo-agent
 - Support: data-platform@company.com

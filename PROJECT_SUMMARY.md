@@ -60,9 +60,13 @@ cookidoo-agent/
 │   └── requirements.txt
 │
 ├── databricks/                   # Databricks infrastructure
-│   ├── notebooks/               # Databricks notebooks
-│   │   ├── 01_setup_catalog_and_schemas.py
-│   │   └── 02_dlt_pipeline.py
+│   ├── notebooks/               # Databricks notebooks (.ipynb)
+│   │   ├── 00_test_cookidoo_connection.ipynb
+│   │   ├── 01_setup_catalog_and_schemas.ipynb
+│   │   ├── 02_dlt_pipeline.ipynb
+│   │   ├── 03_mcp_client_integration.ipynb
+│   │   ├── 04_uc_functions_mcp_tools.ipynb
+│   │   └── 05_mcp_sync_recipes.ipynb
 │   └── scripts/                 # Automation scripts
 │       ├── deploy_infrastructure.py
 │       └── generate_sample_data.py
@@ -167,8 +171,8 @@ python deploy_infrastructure.py
 ### Option 2: Manual Setup
 
 1. Upload notebooks to Databricks workspace
-2. Run `01_setup_catalog_and_schemas.py` notebook
-3. Create and start DLT pipeline using `02_dlt_pipeline.py`
+2. Run `01_setup_catalog_and_schemas.ipynb` notebook
+3. Create and start DLT pipeline using `02_dlt_pipeline.ipynb`
 4. Follow steps in `docs/DATABRICKS_DEPLOYMENT.md`
 
 ## 🧪 Running Tests
