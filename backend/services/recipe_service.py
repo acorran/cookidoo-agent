@@ -5,8 +5,8 @@ Recipe service for handling recipe operations.
 import logging
 from typing import List, Optional
 import httpx
-from models.recipe import Recipe, RecipeModificationRequest, RecipeModificationResponse
-from config.settings import get_settings
+from ..models.recipe import Recipe, RecipeModificationRequest, RecipeModificationResponse
+from ..config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ class RecipeService:
             # TODO: Implement AgentBricks integration
             # For now, create a placeholder modified recipe
             
-            modified_recipe = original_recipe.copy(deep=True)
+            modified_recipe = original_recipe.model_copy(deep=True)
             modified_recipe.id = f"modified_{recipe_id}"
             modified_recipe.title = f"{original_recipe.title} (Modified)"
             
@@ -211,7 +211,7 @@ class RecipeService:
             scale_factor = target_servings / recipe.servings
             
             # Scale ingredients
-            scaled_recipe = recipe.copy(deep=True)
+            scaled_recipe = recipe.model_copy(deep=True)
             scaled_recipe.servings = target_servings
             
             for ingredient in scaled_recipe.ingredients:

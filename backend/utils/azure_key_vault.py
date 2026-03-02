@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
-from config.settings import get_settings
+from ..config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 

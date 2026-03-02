@@ -50,6 +50,9 @@ export const recipeApi = {
         apiClient.post(`/recipes/save?save_to_cookidoo=${saveToCookidoo}`, recipe),
     scaleRecipe: (id: string, servings: number) =>
         apiClient.post(`/recipes/${id}/scale?target_servings=${servings}`),
+    getCollections: () => apiClient.get('/recipes/collections'),
+    getCreatedRecipes: () => apiClient.get('/recipes/created'),
+    getCreatedRecipeDetail: (id: string) => apiClient.get(`/recipes/created/${id}`),
 };
 
 // Chat API

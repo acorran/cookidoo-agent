@@ -5,10 +5,10 @@ Shopping list service for generating and managing shopping lists.
 import logging
 from typing import List, Dict, Optional
 import uuid
-from models.shopping import ShoppingListRequest, ShoppingList, ShoppingListItem, IngredientCategory
-from models.recipe import Recipe
-from services.recipe_service import RecipeService
-from config.settings import get_settings
+from ..models.shopping import ShoppingListRequest, ShoppingList, ShoppingListItem, IngredientCategory
+from ..models.recipe import Recipe
+from ..services.recipe_service import RecipeService
+from ..config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 

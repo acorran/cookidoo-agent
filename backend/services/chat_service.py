@@ -5,8 +5,8 @@ Chat service for Q&A and cooking assistance.
 import logging
 from typing import List, Optional
 import uuid
-from models.chat import ChatRequest, ChatResponse, ChatMessage, MessageRole
-from config.settings import get_settings
+from ..models.chat import ChatRequest, ChatResponse, ChatMessage, MessageRole
+from ..config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 

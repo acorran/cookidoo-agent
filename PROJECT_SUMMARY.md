@@ -29,8 +29,7 @@ cookidoo-agent/
 │   ├── config/
 │   │   └── settings.py          # Configuration management
 │   ├── main.py                   # FastAPI application entry
-│   ├── requirements.txt
-│   └── .env.example
+│   └── requirements.txt          # Backend-only deps (Docker)
 │
 ├── frontend/                     # React TypeScript frontend
 │   ├── public/                   # Static assets
@@ -52,8 +51,7 @@ cookidoo-agent/
 │   │   ├── App.tsx
 │   │   └── index.tsx
 │   ├── package.json
-│   ├── tsconfig.json
-│   └── .env.example
+│   └── tsconfig.json
 │
 ├── mcp-server/                   # Model Context Protocol server
 │   ├── server.py                # MCP server implementation
@@ -112,13 +110,13 @@ cookidoo-agent/
 ### 1. Backend Setup
 
 ```powershell
-cd backend
+# From project root
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your configuration
-uvicorn main:app --reload --port 8000
+uvicorn backend.main:app --reload --port 8000
 ```
 
 ### 2. Frontend Setup
@@ -126,19 +124,15 @@ uvicorn main:app --reload --port 8000
 ```powershell
 cd frontend
 npm install
-cp .env.example .env
-# Edit .env if needed
 npm start
 ```
 
 ### 3. MCP Server Setup
 
 ```powershell
-cd mcp-server
-python -m venv venv
+# From project root (venv already created in step 1)
 .\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn server:app --reload --port 8001
+uvicorn mcp-server.server:app --reload --port 8001
 ```
 
 ### 4. Docker Deployment

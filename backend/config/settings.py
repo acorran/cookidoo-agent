@@ -6,9 +6,13 @@ Sensitive values should be stored in Azure Key Vault.
 """
 
 from functools import lru_cache
-from typing import List, Optional
-from pydantic import Field
+from pathlib import Path
+from typing import List, Optional, Union
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Project root is two levels up from backend/config/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -26,12 +30,20 @@ class Settings(BaseSettings):
     api_workers: int = Field(default=4, alias="API_WORKERS")
 
     # CORS settings
-    cors_origins: List[str] = Field(
+    cors_origins: Union[List[str], str] = Field(
         default=["http://localhost:3000", "http://localhost:8000"], alias="CORS_ORIGINS"
     )
 
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse comma-separated CORS origins string into a list."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
     # Azure Key Vault settings
-    azure_key_vault_url: str = Field(..., alias="AZURE_KEY_VAULT_URL")
+    azure_key_vault_url: str = Field(default="", alias="AZURE_KEY_VAULT_URL")
     azure_tenant_id: Optional[str] = Field(default=None, alias="AZURE_TENANT_ID")
     azure_client_id: Optional[str] = Field(default=None, alias="AZURE_CLIENT_ID")
     azure_client_secret: Optional[str] = Field(
@@ -39,7 +51,7 @@ class Settings(BaseSettings):
     )
 
     # Databricks settings
-    databricks_host: str = Field(..., alias="DATABRICKS_HOST")
+    databricks_host: str = Field(default="", alias="DATABRICKS_HOST")
     databricks_token: Optional[str] = Field(default=None, alias="DATABRICKS_TOKEN")
     databricks_catalog: str = Field(default="cookidoo_agent", alias="DATABRICKS_CATALOG")
     databricks_schema: str = Field(default="main", alias="DATABRICKS_SCHEMA")
@@ -67,9 +79,11 @@ class Settings(BaseSettings):
     )
     mcp_timeout: int = Field(default=30, alias="MCP_TIMEOUT")
 
-    # Cookidoo API settings (retrieved from Key Vault)
-    cookidoo_username: Optional[str] = None
-    cookidoo_password: Optional[str] = None
+    # Cookidoo API settings (retrieved from Key Vault in production)
+    cookidoo_email: Optional[str] = Field(default=None, alias="COOKIDOO_EMAIL")
+    cookidoo_password: Optional[str] = Field(default=None, alias="COOKIDOO_PASSWORD")
+    cookidoo_country_code: str = Field(default="us", alias="COOKIDOO_COUNTRY_CODE")
+    cookidoo_language: str = Field(default="en-US", alias="COOKIDOO_LANGUAGE")
 
     # Logging settings
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
@@ -85,7 +99,10 @@ class Settings(BaseSettings):
     cache_ttl: int = Field(default=3600, alias="CACHE_TTL")  # seconds
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+        env_file=str(PROJECT_ROOT / ".env"),
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
     )
 
 

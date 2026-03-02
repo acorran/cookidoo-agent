@@ -13,13 +13,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 
-from api.recipes import router as recipes_router
-from api.chat import router as chat_router
-from api.shopping import router as shopping_router
-from api.health import router as health_router
-from config.settings import get_settings
-from utils.logging_config import setup_logging
-from utils.azure_key_vault import init_key_vault
+from .api.recipes import router as recipes_router
+from .api.chat import router as chat_router
+from .api.shopping import router as shopping_router
+from .api.health import router as health_router
+from .config.settings import get_settings
+from .utils.logging_config import setup_logging
+from .utils.azure_key_vault import init_key_vault
+from .services.cookidoo_service import CookidooService
+from .utils.dependencies import set_cookidoo_service
 
 # Initialize logging
 setup_logging()
@@ -39,26 +41,46 @@ async def lifespan(app: FastAPI):
     
     try:
         # Initialize Azure Key Vault for secure credential management
-        await init_key_vault(settings.azure_key_vault_url)
-        logger.info("Azure Key Vault initialized successfully")
-        
-        # TODO: Initialize Databricks connection
-        # TODO: Initialize MCP server connection
-        # TODO: Initialize AgentBricks LLM orchestration
-        
+        try:
+            await init_key_vault(settings.azure_key_vault_url)
+            logger.info("Azure Key Vault initialized successfully")
+        except Exception:
+            logger.warning("Azure Key Vault not available – using .env credentials")
+
+        # Initialize Cookidoo connection
+        if settings.cookidoo_email and settings.cookidoo_password:
+            cookidoo_svc = CookidooService(
+                email=settings.cookidoo_email,
+                password=settings.cookidoo_password,
+                country_code=settings.cookidoo_country_code,
+                language=settings.cookidoo_language,
+            )
+            try:
+                await cookidoo_svc.connect()
+                set_cookidoo_service(cookidoo_svc)
+                logger.info("Cookidoo service connected")
+            except Exception as e:
+                logger.error(f"Cookidoo login failed: {e}", exc_info=True)
+        else:
+            logger.warning(
+                "COOKIDOO_EMAIL / COOKIDOO_PASSWORD not set – "
+                "recipe endpoints will return 503"
+            )
+            cookidoo_svc = None
+
         logger.info("Backend startup complete")
-        
+
         yield  # Application runs here
-        
+
     except Exception as e:
         logger.error(f"Startup error: {str(e)}", exc_info=True)
         raise
-    
+
     finally:
         # Cleanup on shutdown
         logger.info("Shutting down Cookidoo Agent Assistant backend...")
-        # TODO: Close Databricks connection
-        # TODO: Close MCP server connection
+        if cookidoo_svc:
+            await cookidoo_svc.disconnect()
         logger.info("Backend shutdown complete")
 
 
@@ -114,9 +136,10 @@ async def root():
 if __name__ == "__main__":
     # Run the application (for local development)
     uvicorn.run(
-        "main:app",
+        "backend.main:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
+        reload_dirs=["backend"],
         log_level="info"
     )

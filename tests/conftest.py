@@ -7,6 +7,22 @@ import os
 from typing import Generator
 
 
+def pytest_deselected(items):
+    """Print deselected tests so it's clear what was skipped."""
+    if not items:
+        return
+    terminal = items[0].config.pluginmanager.get_plugin("terminalreporter")
+    if terminal is None:
+        return
+    terminal.write_line("")
+    terminal.write_line(
+        f"  {len(items)} deselected:", bold=True, yellow=True,
+    )
+    for item in items:
+        terminal.write_line(f"    - {item.nodeid}", yellow=True)
+    terminal.write_line("")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
     """Set up test environment variables."""

@@ -6,9 +6,9 @@ import logging
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 
-from models.chat import ChatRequest, ChatResponse
-from services.chat_service import ChatService
-from utils.dependencies import get_chat_service
+from ..models.chat import ChatRequest, ChatResponse
+from ..services.chat_service import ChatService
+from ..utils.dependencies import get_chat_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

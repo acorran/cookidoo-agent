@@ -7,16 +7,84 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
 
-from models.recipe import (
+from ..models.recipe import (
     Recipe,
     RecipeModificationRequest,
     RecipeModificationResponse
 )
-from services.recipe_service import RecipeService
-from utils.dependencies import get_recipe_service
+from ..services.recipe_service import RecipeService
+from ..services.cookidoo_service import CookidooService
+from ..utils.dependencies import get_recipe_service, get_cookidoo_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+# ── Cookidoo live endpoints ──────────────────────────────────────────
+# These must come BEFORE the /recipes/{recipe_id} wildcard route
+# so FastAPI doesn't capture "collections" or "created" as a recipe_id.
+
+
+@router.get("/recipes/collections")
+async def get_collections(
+    cookidoo: CookidooService = Depends(get_cookidoo_service),
+):
+    """
+    List all custom collections with their recipes.
+
+    Returns a list of collections, each containing its recipes
+    with id, name, and total_time_minutes.
+    """
+    try:
+        collections = await cookidoo.get_collections()
+        total = sum(len(c["recipes"]) for c in collections)
+        return {
+            "collections": collections,
+            "total_recipes": total,
+        }
+    except Exception as e:
+        logger.error(f"Error fetching collections: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/recipes/created")
+async def get_created_recipes(
+    cookidoo: CookidooService = Depends(get_cookidoo_service),
+):
+    """
+    List all user-created (custom) recipes.
+
+    Returns recipes with id, name, has_image, image_url, total_time_minutes.
+    """
+    try:
+        recipes = await cookidoo.get_created_recipes()
+        return {"recipes": recipes, "count": len(recipes)}
+    except Exception as e:
+        logger.error(f"Error fetching created recipes: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/recipes/created/{recipe_id}")
+async def get_created_recipe_detail(
+    recipe_id: str,
+    cookidoo: CookidooService = Depends(get_cookidoo_service),
+):
+    """
+    Get full detail for a single created recipe.
+    """
+    try:
+        detail = await cookidoo.get_recipe_detail(recipe_id)
+        if not detail:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        return detail
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching recipe {recipe_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Generic recipe endpoints (wildcard must come after fixed paths) ──
 
 
 @router.get("/recipes/{recipe_id}", response_model=Recipe)

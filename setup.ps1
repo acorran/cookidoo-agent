@@ -84,8 +84,7 @@ $choice = Read-Host "`nEnter your choice (1-5)"
 
 switch ($choice) {
     "1" {
-        Write-Host "`n[3/5] Setting up Backend..." -ForegroundColor Yellow
-        Set-Location backend
+        Write-Host "`n[3/5] Setting up Python environment..." -ForegroundColor Yellow
         
         if (!(Test-Path "venv")) {
             Write-Host "Creating Python virtual environment..." -ForegroundColor Cyan
@@ -95,16 +94,16 @@ switch ($choice) {
         Write-Host "Activating virtual environment..." -ForegroundColor Cyan
         .\venv\Scripts\Activate.ps1
         
-        Write-Host "Installing Python dependencies..." -ForegroundColor Cyan
+        Write-Host "Installing all Python dependencies (backend + MCP server)..." -ForegroundColor Cyan
         pip install -r requirements.txt
         
         if (!(Test-Path ".env")) {
-            Write-Host "Creating .env file from template..." -ForegroundColor Cyan
-            Copy-Item .env.example .env
-            Write-Host "Please edit backend/.env with your configuration" -ForegroundColor Yellow
+            if (Test-Path ".env.example") {
+                Write-Host "Creating .env file from template..." -ForegroundColor Cyan
+                Copy-Item .env.example .env
+            }
+            Write-Host "Please edit .env with your configuration" -ForegroundColor Yellow
         }
-        
-        Set-Location ..
         
         Write-Host "`n[4/5] Setting up Frontend..." -ForegroundColor Yellow
         Set-Location frontend
@@ -113,45 +112,35 @@ switch ($choice) {
         npm install
         
         if (!(Test-Path ".env")) {
-            Write-Host "Creating .env file from template..." -ForegroundColor Cyan
-            Copy-Item .env.example .env
+            if (Test-Path ".env.example") {
+                Write-Host "Creating .env file from template..." -ForegroundColor Cyan
+                Copy-Item .env.example .env
+            }
         }
         
         Set-Location ..
         
-        Write-Host "`n[5/5] Setting up MCP Server..." -ForegroundColor Yellow
-        Set-Location mcp-server
-        
-        if (!(Test-Path "venv")) {
-            Write-Host "Creating Python virtual environment..." -ForegroundColor Cyan
-            python -m venv venv
-        }
-        
-        Write-Host "Activating virtual environment..." -ForegroundColor Cyan
-        .\venv\Scripts\Activate.ps1
-        
-        Write-Host "Installing Python dependencies..." -ForegroundColor Cyan
-        pip install -r requirements.txt
-        
-        Set-Location ..
+        Write-Host "`n[5/5] Setup Complete!" -ForegroundColor Yellow
         
         Write-Host "`n" + ("=" * 69) -ForegroundColor Green
         Write-Host " Setup Complete!" -ForegroundColor Green
         Write-Host ("=" * 69) -ForegroundColor Green
         
-        Write-Host "`nTo start the application:`n"
-        Write-Host "1. Backend:" -ForegroundColor Cyan
-        Write-Host "   cd backend"
-        Write-Host "   .\venv\Scripts\Activate.ps1"
-        Write-Host "   uvicorn main:app --reload --port 8000`n"
+        Write-Host "`nA single virtual environment has been created at ./venv"
+        Write-Host "It contains dependencies for both the backend and MCP server.`n"
         
-        Write-Host "2. Frontend:" -ForegroundColor Cyan
+        Write-Host "To start the application:`n"
+        Write-Host "1. Backend (from project root):" -ForegroundColor Cyan
+        Write-Host "   .\venv\Scripts\Activate.ps1"
+        Write-Host "   uvicorn backend.main:app --reload --reload-dir backend --port 8000`n"
+        
+        Write-Host "2. Frontend (new terminal):" -ForegroundColor Cyan
         Write-Host "   cd frontend"
         Write-Host "   npm start`n"
         
-        Write-Host "3. MCP Server:" -ForegroundColor Cyan
-        Write-Host "   cd mcp-server"
+        Write-Host "3. MCP Server (new terminal, from project root):" -ForegroundColor Cyan
         Write-Host "   .\venv\Scripts\Activate.ps1"
+        Write-Host "   cd mcp-server"
         Write-Host "   uvicorn server:app --reload --port 8001`n"
         
         Write-Host "Access the application at: http://localhost:3000" -ForegroundColor Green
@@ -185,7 +174,6 @@ switch ($choice) {
     
     "3" {
         Write-Host "`n[3/5] Setting up Backend only..." -ForegroundColor Yellow
-        Set-Location backend
         
         if (!(Test-Path "venv")) {
             python -m venv venv
@@ -195,8 +183,10 @@ switch ($choice) {
         pip install -r requirements.txt
         
         if (!(Test-Path ".env")) {
-            Copy-Item .env.example .env
-            Write-Host "Please edit backend/.env with your configuration" -ForegroundColor Yellow
+            if (Test-Path ".env.example") {
+                Copy-Item .env.example .env
+            }
+            Write-Host "Please edit .env with your configuration" -ForegroundColor Yellow
         }
         
         Write-Host "`n" + ("=" * 69) -ForegroundColor Green
@@ -204,9 +194,8 @@ switch ($choice) {
         Write-Host ("=" * 69) -ForegroundColor Green
         
         Write-Host "`nTo start the backend:"
-        Write-Host "  cd backend"
         Write-Host "  .\venv\Scripts\Activate.ps1"
-        Write-Host "  uvicorn main:app --reload --port 8000`n"
+        Write-Host "  uvicorn backend.main:app --reload --reload-dir backend --port 8000`n"
     }
     
     "4" {
@@ -216,7 +205,9 @@ switch ($choice) {
         npm install
         
         if (!(Test-Path ".env")) {
-            Copy-Item .env.example .env
+            if (Test-Path ".env.example") {
+                Copy-Item .env.example .env
+            }
         }
         
         Write-Host "`n" + ("=" * 69) -ForegroundColor Green

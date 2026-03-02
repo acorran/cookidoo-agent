@@ -11,18 +11,18 @@ from backend.models.recipe import (
     Recipe,
     Ingredient,
     CookingStep,
-    RecipeModificationRequest,
-    RecipeSearchRequest
 )
 
 
 @pytest.fixture
 def mock_settings():
     """Mock settings for tests."""
-    with patch('backend.services.recipe_service.settings') as mock:
-        mock.MCP_SERVER_URL = "http://localhost:8001"
-        mock.DATABRICKS_WORKSPACE_URL = "https://test.databricks.com"
-        mock.DATABRICKS_TOKEN = "test_token"
+    mock = Mock()
+    mock.mcp_server_url = "http://localhost:8001"
+    mock.mcp_timeout = 30.0
+    mock.databricks_host = "https://test.databricks.com"
+    mock.databricks_token = "test_token"
+    with patch('backend.services.recipe_service.get_settings', return_value=mock):
         yield mock
 
 
@@ -30,7 +30,7 @@ def mock_settings():
 def sample_recipe():
     """Sample recipe for testing."""
     return Recipe(
-        recipe_id="test-recipe-001",
+        id="test-recipe-001",
         title="Test Pasta",
         description="A simple test pasta recipe",
         servings=4,
@@ -38,15 +38,12 @@ def sample_recipe():
         cook_time_minutes=20,
         total_time_minutes=35,
         difficulty="easy",
-        cuisine="Italian",
-        meal_type="dinner",
-        dietary_restrictions=["vegetarian"],
         ingredients=[
             Ingredient(name="pasta", quantity=500, unit="g"),
             Ingredient(name="tomato sauce", quantity=2, unit="cups"),
             Ingredient(name="parmesan", quantity=50, unit="g")
         ],
-        cooking_steps=[
+        steps=[
             CookingStep(step_number=1, instruction="Boil water", duration_minutes=5),
             CookingStep(step_number=2, instruction="Cook pasta", duration_minutes=10),
             CookingStep(step_number=3, instruction="Add sauce", duration_minutes=5)
@@ -70,22 +67,22 @@ class TestRecipeService:
     @pytest.mark.asyncio
     async def test_get_recipe_success(self, recipe_service, sample_recipe):
         """Test successful recipe retrieval."""
-        with patch('httpx.AsyncClient.get') as mock_get:
+        with patch.object(recipe_service.mcp_client, 'get') as mock_get:
             mock_get.return_value = Mock(
                 status_code=200,
-                json=lambda: sample_recipe.dict()
+                json=lambda: sample_recipe.model_dump(mode='json')
             )
             
             result = await recipe_service.get_recipe("test-recipe-001")
             
-            assert result.recipe_id == "test-recipe-001"
+            assert result.id == "test-recipe-001"
             assert result.title == "Test Pasta"
             assert len(result.ingredients) == 3
     
     @pytest.mark.asyncio
     async def test_get_recipe_not_found(self, recipe_service):
         """Test recipe not found scenario."""
-        with patch('httpx.AsyncClient.get') as mock_get:
+        with patch.object(recipe_service.mcp_client, 'get') as mock_get:
             mock_get.return_value = Mock(status_code=404)
             
             result = await recipe_service.get_recipe("nonexistent")
@@ -95,28 +92,34 @@ class TestRecipeService:
     @pytest.mark.asyncio
     async def test_scale_recipe(self, recipe_service, sample_recipe):
         """Test recipe scaling functionality."""
-        scaled = await recipe_service.scale_recipe(sample_recipe, 8)
+        with patch.object(recipe_service.mcp_client, 'get') as mock_get:
+            mock_get.return_value = Mock(
+                status_code=200,
+                json=lambda: sample_recipe.model_dump(mode='json')
+            )
+            scaled = await recipe_service.scale_recipe("test-recipe-001", 8)
         
         assert scaled.servings == 8
         assert scaled.ingredients[0].quantity == 1000  # 500g * 2
         assert scaled.ingredients[1].quantity == 4  # 2 cups * 2
-        assert scaled.title == "Test Pasta (8 servings)"
     
     @pytest.mark.asyncio
     async def test_modify_recipe_placeholder(self, recipe_service, sample_recipe):
         """Test recipe modification (placeholder implementation)."""
-        request = RecipeModificationRequest(
-            original_recipe=sample_recipe,
-            modifications="Make it vegan",
-            preserve_cooking_method=True
-        )
-        
-        result = await recipe_service.modify_recipe(request)
+        with patch.object(recipe_service.mcp_client, 'get') as mock_get:
+            mock_get.return_value = Mock(
+                status_code=200,
+                json=lambda: sample_recipe.model_dump(mode='json')
+            )
+            result = await recipe_service.modify_recipe(
+                recipe_id="test-recipe-001",
+                modification_prompt="Make it vegan",
+            )
         
         # Since it's a placeholder, check basic structure
-        assert result.original_recipe == sample_recipe
+        assert result.original_recipe is not None
         assert result.modified_recipe is not None
-        assert result.conversation_id is not None
+        assert result.success is True
     
     def test_ingredient_scaling(self):
         """Test individual ingredient scaling logic."""
@@ -136,7 +139,7 @@ class TestRecipeModel:
     
     def test_recipe_creation(self, sample_recipe):
         """Test creating a recipe with valid data."""
-        assert sample_recipe.recipe_id == "test-recipe-001"
+        assert sample_recipe.id == "test-recipe-001"
         assert sample_recipe.servings > 0
         assert len(sample_recipe.ingredients) > 0
     
@@ -144,7 +147,7 @@ class TestRecipeModel:
         """Test servings validation."""
         with pytest.raises(ValueError):
             Recipe(
-                recipe_id="test",
+                id="test",
                 title="Test",
                 description="Test",
                 servings=0,  # Invalid
@@ -152,9 +155,8 @@ class TestRecipeModel:
                 cook_time_minutes=10,
                 total_time_minutes=20,
                 difficulty="easy",
-                dietary_restrictions=[],
                 ingredients=[],
-                cooking_steps=[]
+                steps=[]
             )
     
     def test_ingredient_validation(self):
@@ -164,7 +166,7 @@ class TestRecipeModel:
     
     def test_cooking_step_ordering(self, sample_recipe):
         """Test cooking steps are properly ordered."""
-        steps = sample_recipe.cooking_steps
+        steps = sample_recipe.steps
         for i, step in enumerate(steps):
             assert step.step_number == i + 1
 

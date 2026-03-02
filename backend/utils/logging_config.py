@@ -4,8 +4,7 @@ Utility functions for logging configuration.
 
 import logging
 import sys
-from pythonjsonlogger import jsonlogger
-from config.settings import get_settings
+from ..config.settings import get_settings
 
 
 def setup_logging():
@@ -28,11 +27,18 @@ def setup_logging():
     console_handler = logging.StreamHandler(sys.stdout)
     
     if settings.log_format == "json":
-        # JSON formatter for production
-        formatter = jsonlogger.JsonFormatter(
-            fmt='%(asctime)s %(name)s %(levelname)s %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
+        try:
+            from pythonjsonlogger.json import JsonFormatter
+            formatter = JsonFormatter(
+                fmt='%(asctime)s %(name)s %(levelname)s %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S'
+            )
+        except ImportError:
+            # Fall back to text format if python-json-logger not installed
+            formatter = logging.Formatter(
+                fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S'
+            )
     else:
         # Standard formatter for development
         formatter = logging.Formatter(

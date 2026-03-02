@@ -5,9 +5,9 @@ Shopping list API endpoints.
 import logging
 from fastapi import APIRouter, HTTPException, Depends
 
-from models.shopping import ShoppingListRequest, ShoppingList
-from services.shopping_service import ShoppingService
-from utils.dependencies import get_shopping_service
+from ..models.shopping import ShoppingListRequest, ShoppingList
+from ..services.shopping_service import ShoppingService
+from ..utils.dependencies import get_shopping_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

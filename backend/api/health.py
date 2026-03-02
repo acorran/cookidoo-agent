@@ -3,7 +3,7 @@ Health check and monitoring endpoints.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
@@ -21,7 +21,8 @@ async def health_check():
     """
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "service": "cookidoo-agent-backend"
     }
 
@@ -42,7 +43,7 @@ async def readiness_check():
             status_code=200,
             content={
                 "status": "ready",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "dependencies": {
                     "databricks": "connected",
                     "mcp_server": "connected",
@@ -68,4 +69,4 @@ async def liveness_check():
     
     Simple check to verify the service is still running.
     """
-    return {"status": "alive", "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "alive", "timestamp": datetime.now(timezone.utc).isoformat()}

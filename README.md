@@ -63,24 +63,22 @@ docker-compose up --build
 ### Manual Local Setup
 
 ```powershell
-# Backend
-cd backend
+# Python environment (from project root)
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-cp .env.example .env  # Edit with your config
-uvicorn main:app --reload --port 8000
+
+# Backend (activate venv first, from project root)
+uvicorn backend.main:app --reload --reload-dir backend --port 8000
 
 # Frontend (new terminal)
 cd frontend
 npm install
 npm start
 
-# MCP Server (new terminal)
-cd mcp-server
-python -m venv venv
+# MCP Server (new terminal, activate venv first)
 .\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+cd mcp-server
 uvicorn server:app --reload --port 8001
 ```
 
@@ -141,18 +139,18 @@ uvicorn server:app --reload --port 8001
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React, TypeScript |
-| **Backend** | FastAPI, Python 3.11+ |
-| **MCP Server** | FastMCP, cookidoo-api |
-| **LLM** | Claude Sonnet 4.5 (via Databricks Model Serving) |
-| **Data Platform** | Databricks Unity Catalog, Delta Live Tables |
-| **AI Agents** | Databricks Mosaic AI Agent Framework, UC Functions |
-| **Infrastructure** | Azure Container Apps, Bicep (IaC) |
-| **Secrets** | Azure Key Vault |
-| **Containerisation** | Docker, Docker Compose |
-| **Deployment** | Azure Developer CLI (`azd up`) |
+| Layer                | Technology                                         |
+| -------------------- | -------------------------------------------------- |
+| **Frontend**         | React, TypeScript                                  |
+| **Backend**          | FastAPI, Python 3.11+                              |
+| **MCP Server**       | FastMCP, cookidoo-api                              |
+| **LLM**              | Claude Sonnet 4.5 (via Databricks Model Serving)   |
+| **Data Platform**    | Databricks Unity Catalog, Delta Live Tables        |
+| **AI Agents**        | Databricks Mosaic AI Agent Framework, UC Functions |
+| **Infrastructure**   | Azure Container Apps, Bicep (IaC)                  |
+| **Secrets**          | Azure Key Vault                                    |
+| **Containerisation** | Docker, Docker Compose                             |
+| **Deployment**       | Azure Developer CLI (`azd up`)                     |
 
 ## Project Structure
 
@@ -163,10 +161,12 @@ cookidoo-agent/
 ├── setup.ps1                     # Automated local setup script
 ├── verify-prerequisites.ps1      # Check all tools are installed
 │
+├── .env.example                  # Environment variable template
+├── requirements.txt              # Combined Python deps (local dev)
+│
 ├── backend/                      # FastAPI backend
 │   ├── main.py                   # Application entry point
-│   ├── requirements.txt
-│   ├── .env.example
+│   ├── requirements.txt          # Backend-only deps (Docker)
 │   ├── api/                      # API route handlers
 │   │   ├── chat.py
 │   │   ├── health.py
@@ -198,8 +198,7 @@ cookidoo-agent/
 ├── mcp-server/                   # Model Context Protocol server
 │   ├── server.py                 # MCP server (REST + SSE)
 │   ├── mcp_tools.py              # Cookidoo tool definitions
-│   ├── requirements.txt
-│   └── .env.template
+│   └── requirements.txt          # MCP-only deps (Docker)
 │
 ├── databricks/                   # Databricks notebooks & scripts
 │   ├── notebooks/                # Jupyter notebooks (.ipynb)
@@ -263,15 +262,15 @@ Once the backend is running, access the interactive API documentation:
 
 ### Key Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/health` | Health check |
-| `POST` | `/api/chat` | Chat with the cooking assistant |
-| `GET` | `/api/recipes/search` | Search recipes |
-| `GET` | `/api/recipes/{id}` | Get recipe details |
-| `POST` | `/api/recipes/modify` | Modify an existing recipe |
-| `POST` | `/api/recipes/save` | Save recipe to Cookidoo |
-| `POST` | `/api/shopping-list` | Generate shopping list |
+| Method | Path                  | Description                     |
+| ------ | --------------------- | ------------------------------- |
+| `GET`  | `/api/health`         | Health check                    |
+| `POST` | `/api/chat`           | Chat with the cooking assistant |
+| `GET`  | `/api/recipes/search` | Search recipes                  |
+| `GET`  | `/api/recipes/{id}`   | Get recipe details              |
+| `POST` | `/api/recipes/modify` | Modify an existing recipe       |
+| `POST` | `/api/recipes/save`   | Save recipe to Cookidoo         |
+| `POST` | `/api/shopping-list`  | Generate shopping list          |
 
 ## Running Tests
 
@@ -296,7 +295,7 @@ mypy backend/
 
 ## Environment Variables
 
-The backend uses pydantic-settings. Create `backend/.env` from `backend/.env.example`:
+The backend uses pydantic-settings. Create `.env` in the project root from `.env.example`:
 
 ```env
 # Azure Key Vault
@@ -347,14 +346,14 @@ docker-compose logs -f backend   # View backend logs
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [PREREQUISITES.md](PREREQUISITES.md) | Tool installation guide |
-| [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) | Project overview and setup |
-| [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md) | Feature implementation tracker |
-| [docs/PRD.md](docs/PRD.md) | Product Requirements Document |
-| [docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md) | Azure deployment guide |
-| [docs/DATABRICKS_DEPLOYMENT.md](docs/DATABRICKS_DEPLOYMENT.md) | Databricks setup guide |
+| Document                                                             | Description                    |
+| -------------------------------------------------------------------- | ------------------------------ |
+| [PREREQUISITES.md](PREREQUISITES.md)                                 | Tool installation guide        |
+| [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)                             | Project overview and setup     |
+| [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md)           | Feature implementation tracker |
+| [docs/PRD.md](docs/PRD.md)                                           | Product Requirements Document  |
+| [docs/AZURE_DEPLOYMENT.md](docs/AZURE_DEPLOYMENT.md)                 | Azure deployment guide         |
+| [docs/DATABRICKS_DEPLOYMENT.md](docs/DATABRICKS_DEPLOYMENT.md)       | Databricks setup guide         |
 | [docs/COOKIDOO_MCP_INTEGRATION.md](docs/COOKIDOO_MCP_INTEGRATION.md) | MCP + Cookidoo API integration |
 
 ## Security
